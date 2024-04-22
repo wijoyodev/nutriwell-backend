@@ -1,12 +1,23 @@
 import express from 'express';
-import Logger from '../lib/logger';
+import multer from 'multer';
+import { refreshTokenUser, loginUser, logoutUser, resetPasswordUser } from '../controllers/auth';
+import { getUserByValue, registerUser, updateUser } from '../controllers/user';
+import { loginSchema, logoutSchema, refreshTokenSchema, registerSchema } from '../lib/validation';
+import { checkSession } from '../middlewares';
 
 const router = express.Router();
-
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, `${__dirname}/../uploads`),
+  filename: (_req, file, cb) => {
+    const ext = file.originalname.substring(file.originalname.lastIndexOf('.'));
+    cb(null, `img-${Date.now()}${ext}`);
+  },
+});
+const upload = multer({ storage });
 /**
  * @swagger
  * /hello:
- *  post:
+ *  get:
  *      summary: to get hello
  *      description: to get spesific hello by body data
  *      requestBody:
@@ -34,13 +45,23 @@ const router = express.Router();
  *                                  type: string
  *                                  example: Bambang
  */
-router.post('/hello', (req, res) => {
+router.get('/hello', (req, res) => {
   const { name } = req.body;
-  Logger.error('Error in path /hello');
   res.status(200).json({
     title: 'Hello this is new path',
     name,
   });
 });
+
+// auth
+router.post('/register', upload.single('avatar'), registerSchema, registerUser);
+router.post('/login', loginSchema, loginUser);
+router.get('/refresh', checkSession, refreshTokenSchema, refreshTokenUser);
+router.post('/logout', checkSession, logoutSchema, logoutUser);
+router.post('/reset-password', resetPasswordUser);
+
+// users
+router.get('/user', checkSession, getUserByValue);
+router.patch('/user', checkSession, updateUser);
 
 export default router;
