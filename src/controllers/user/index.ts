@@ -3,7 +3,7 @@ import { validationResult } from 'express-validator';
 import Logger from '../../lib/logger';
 import { phoneNumberChecker, referralCodeGenerator } from '../../utils';
 import { CONFIRM_PASSWORD_ERROR, DOMAIN, ERROR_NAME } from '../../constants';
-import { findUser, register, update } from '../../api/user';
+import { findUser, register, registerAdmin as registerNewAdmin, update } from '../../api/user';
 import { UserQueries } from '../../types';
 
 const registerUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -28,6 +28,32 @@ const registerUser = async (req: Request, res: Response, next: NextFunction) => 
     res.status(201).json({ result: userCreds });
   } catch (err: unknown) {
     Logger.error(`Register user -client ${JSON.stringify(req.client)}- ${req.body.email}: ${JSON.stringify(err)}`);
+    let errorPayload = err;
+    if (err instanceof Error) errorPayload = { name: err.name, message: err.message };
+    next(errorPayload);
+  }
+};
+
+const registerAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    Logger.info(`Register admin -client ${JSON.stringify(req.client)}-: start`);
+    // validation for body request
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      throw { name: ERROR_NAME.BAD_REQUEST, message: result.array() };
+    }
+    const { name, email, password, role } = req.body;
+    const payload = {
+      email,
+      full_name: name,
+      password,
+      role,
+    };
+    const resultAdmin = await registerNewAdmin(payload);
+    Logger.info(`Register admin -client ${JSON.stringify(req.client)}-: finish`);
+    res.status(201).json({ message: resultAdmin });
+  } catch (err) {
+    Logger.error(`Register admin -client ${JSON.stringify(req.client)}-: ${JSON.stringify(err)}`);
     let errorPayload = err;
     if (err instanceof Error) errorPayload = { name: err.name, message: err.message };
     next(errorPayload);
@@ -79,4 +105,4 @@ const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { registerUser, getUserByValue, updateUser };
+export { registerUser, getUserByValue, updateUser, registerAdmin };

@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
-import { User } from '../../types';
-import { createUser, findUserByValue, getUserMaxValue, updateUser } from '../../services/users';
+import { User, UserAdmin } from '../../types';
+import { createAdmin, createUser, findUserByValue, getUserMaxValue, updateUser } from '../../services/users';
 import { signToken } from '../auth';
 import { ERROR_NAME } from '../../constants';
 import { createSession } from '../../services/sessions';
@@ -42,6 +42,33 @@ export const register = async (data: User) => {
           ...tokenUser,
         };
       } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not create session for the user in DB' };
+    } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not create user.' };
+  } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'already a registered user.' };
+};
+
+export const registerAdmin = async (data: UserAdmin) => {
+  // check whether user exists
+  const [usersFound] = await findUserByValue([data.email], ['email']);
+  const [user] = await getUserMaxValue();
+  const totalUsers = Array.isArray(user) && user.length > 0 ? user[0].total + 1 : 0;
+  if (Array.isArray(usersFound) && usersFound.length < 1) {
+    // hash password
+    const { password, ...rest } = data;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const payload = {
+      ...rest,
+      password: hashedPassword,
+    };
+    // modify the id based on role
+    const userRole = payload.role || '3';
+    const userId = identityGenerator(userRole) + '0' + totalUsers;
+    payload.code = userId;
+    // create new user in DB
+    const [result] = await createAdmin(payload);
+    if (result) {
+      return {
+        status: result.affectedRows,
+      };
     } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not create user.' };
   } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'already a registered user.' };
 };

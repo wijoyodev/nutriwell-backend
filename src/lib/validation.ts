@@ -52,6 +52,31 @@ export const registerSchema = checkSchema({
   },
 });
 
+export const registerAdminSchema = checkSchema({
+  email: {
+    isEmail: true,
+  },
+  password: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+    isLength: {
+      options: { max: 6, min: 6 },
+      errorMessage: PASSWORD_ERROR,
+    },
+  },
+  name: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  role: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+});
+
 export const refreshTokenSchema = checkSchema({
   user: {
     notEmpty: {

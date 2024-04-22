@@ -1,5 +1,5 @@
 import { execute } from '.';
-import { User } from '../types';
+import { User, UserAdmin } from '../types';
 
 export const createUser = async (payload: User) => {
   const {
@@ -33,6 +33,15 @@ export const createUser = async (payload: User) => {
       phone_number_country,
       avatar_url,
     ],
+  );
+};
+
+export const createAdmin = async (payload: UserAdmin) => {
+  const { full_name, email, password, code, role = 4 } = payload;
+  return await execute(
+    `INSERT INTO users(code,role,full_name,email,password) 
+      VALUES(?,?,?,?,?);`,
+    [code, role, full_name, email, password],
   );
 };
 

@@ -16,6 +16,14 @@ export interface User {
   referrer_code?: string;
 }
 
+export interface UserAdmin {
+  full_name: string;
+  email: string;
+  password: string;
+  role: string;
+  code?: string;
+}
+
 export type UserQueries = {
   id?: string;
   role?: string;

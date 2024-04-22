@@ -1,8 +1,8 @@
 import express from 'express';
 import multer from 'multer';
 import { refreshTokenUser, loginUser, logoutUser, resetPasswordUser } from '../controllers/auth';
-import { getUserByValue, registerUser, updateUser } from '../controllers/user';
-import { loginSchema, logoutSchema, refreshTokenSchema, registerSchema } from '../lib/validation';
+import { getUserByValue, registerAdmin, registerUser, updateUser } from '../controllers/user';
+import { loginSchema, logoutSchema, refreshTokenSchema, registerAdminSchema, registerSchema } from '../lib/validation';
 import { checkSession } from '../middlewares';
 
 const router = express.Router();
@@ -55,6 +55,7 @@ router.get('/hello', (req, res) => {
 
 // auth
 router.post('/register', upload.single('avatar'), registerSchema, registerUser);
+router.post('/register/admin', registerAdminSchema, registerAdmin);
 router.post('/login', loginSchema, loginUser);
 router.get('/refresh', checkSession, refreshTokenSchema, refreshTokenUser);
 router.post('/logout', checkSession, logoutSchema, logoutUser);
