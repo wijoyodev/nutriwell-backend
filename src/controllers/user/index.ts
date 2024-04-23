@@ -48,6 +48,7 @@ const registerAdmin = async (req: Request, res: Response, next: NextFunction) =>
       full_name: name,
       password,
       role,
+      status: '1',
     };
     const resultAdmin = await registerNewAdmin(payload);
     Logger.info(`Register admin -client ${JSON.stringify(req.client)}-: finish`);
@@ -109,10 +110,10 @@ const updateUser = async (req: Request, res: Response, next: NextFunction) => {
 
 const getMyProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    Logger.error(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: start`);
+    Logger.info(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: start`);
     const { user_id } = req.user;
     const resultProfile = user_id ? await findProfile(user_id) : [];
-    Logger.error(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: start`);
+    Logger.info(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: finish`);
     res.status(200).json({ data: resultProfile });
   } catch (err) {
     Logger.error(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: ${JSON.stringify(err)}`);

@@ -71,8 +71,9 @@ export const findUserNetworkList = async (values: string[]) => {
 
 export const findSelf = async (userId: string) => {
   return await query(`
-    SELECT s.*, ne.my_networks, JSON_ARRAYAGG(JSON_MERGE_PRESERVE(JSON_OBJECT('level', r.level),JSON_OBJECT('total_network', r.total_network))) AS network_list FROM users s JOIN (SELECT n.level, COUNT(n.user_id) total_network FROM networks n GROUP BY n.level) r 
-    JOIN (SELECT t.upline_id, COUNT(t.user_id) AS my_networks FROM networks t GROUP BY t.upline_id) ne WHERE s.id = ${userId} AND ne.upline_id = ${userId};
+    SELECT s.id, s.code, s.role, s.full_name, s.email, s.phone_number, s.avatar_url, s.date_of_birth, s.phone_number_country,
+    s.gender, s.account_bank, s.account_bank_name, s.account_bank_number, s.referral_code, s.referrer_code, s.status, s.created_at, s.updated_at, JSON_ARRAYAGG(JSON_MERGE_PRESERVE(JSON_OBJECT('level', r.level),JSON_OBJECT('total_network', r.total_network))) AS network_list FROM users s JOIN (SELECT n.level, COUNT(n.user_id) total_network FROM networks n GROUP BY n.level) r 
+     WHERE s.id = ${userId};
   `);
 };
 
