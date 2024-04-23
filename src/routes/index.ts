@@ -1,9 +1,10 @@
 import express from 'express';
 import multer from 'multer';
 import { refreshTokenUser, loginUser, logoutUser, resetPasswordUser } from '../controllers/auth';
-import { getUserByValue, registerAdmin, registerUser, updateUser } from '../controllers/user';
+import { getMyProfile, getUserByValue, registerAdmin, registerUser, updateUser } from '../controllers/user';
 import { loginSchema, logoutSchema, refreshTokenSchema, registerAdminSchema, registerSchema } from '../lib/validation';
 import { checkSession } from '../middlewares';
+import { getNetworkList } from '../controllers/network';
 
 const router = express.Router();
 const storage = multer.diskStorage({
@@ -63,6 +64,10 @@ router.post('/reset-password', resetPasswordUser);
 
 // users
 router.get('/user', checkSession, getUserByValue);
+router.get('/user/me', checkSession, getMyProfile);
 router.patch('/user', checkSession, updateUser);
+
+// networks
+router.get('/network', checkSession, getNetworkList);
 
 export default router;

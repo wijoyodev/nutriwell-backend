@@ -30,11 +30,6 @@ export const registerSchema = checkSchema({
       errorMessage: FIELD_EMPTY,
     },
   },
-  referrer_code: {
-    notEmpty: {
-      errorMessage: FIELD_EMPTY,
-    },
-  },
   full_name: {
     notEmpty: {
       errorMessage: FIELD_EMPTY,

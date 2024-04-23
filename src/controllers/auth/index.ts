@@ -1,5 +1,4 @@
 import { NextFunction, Response, Request } from 'express';
-// import { Request } from '../../types';
 import { validationResult } from 'express-validator';
 import { ERROR_NAME } from '../../constants';
 import { login, logout, refreshToken, resetPassword } from '../../api/auth';

@@ -3,7 +3,7 @@ import { validationResult } from 'express-validator';
 import Logger from '../../lib/logger';
 import { phoneNumberChecker, referralCodeGenerator } from '../../utils';
 import { CONFIRM_PASSWORD_ERROR, DOMAIN, ERROR_NAME } from '../../constants';
-import { findUser, register, registerAdmin as registerNewAdmin, update } from '../../api/user';
+import { findProfile, findUser, register, registerAdmin as registerNewAdmin, update } from '../../api/user';
 import { UserQueries } from '../../types';
 
 const registerUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -87,13 +87,15 @@ const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     Logger.info(`Update user -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
     const payload = req.body;
-    const { user_id, role } = req.user;
+    const { editor, user_id, role } = req.user;
     if (!payload.id) throw { name: ERROR_NAME.BAD_REQUEST, message: 'id could not be empty.' };
-    if (role !== '1' || user_id !== payload.id) throw { name: ERROR_NAME.BAD_REQUEST, message: 'do not have access.' };
+    if (!editor) throw { name: ERROR_NAME.BAD_REQUEST, message: 'do not have access.' };
     if (payload.password && payload.confirm_password) {
       if (payload.password !== payload.confirm_password)
         throw { name: ERROR_NAME.BAD_REQUEST, message: CONFIRM_PASSWORD_ERROR };
     }
+    if (role === '4' && payload.id !== user_id)
+      throw { name: ERROR_NAME.BAD_REQUEST, message: 'do not have access to update.' };
     const updateResult = await update(payload);
     Logger.info(`Update user -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ status: updateResult, message: 'user updated.' });
@@ -105,4 +107,17 @@ const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { registerUser, getUserByValue, updateUser, registerAdmin };
+const getMyProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    Logger.error(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: start`);
+    const { user_id } = req.user;
+    const resultProfile = user_id ? await findProfile(user_id) : [];
+    Logger.error(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: start`);
+    res.status(200).json({ data: resultProfile });
+  } catch (err) {
+    Logger.error(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: ${JSON.stringify(err)}`);
+    next(err);
+  }
+};
+
+export { registerUser, getUserByValue, updateUser, registerAdmin, getMyProfile };
