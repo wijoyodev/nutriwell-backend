@@ -126,3 +126,16 @@ export const logoutSchema = checkSchema({
     },
   },
 });
+
+export const bannerSchema = checkSchema({
+  title: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  description: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+});

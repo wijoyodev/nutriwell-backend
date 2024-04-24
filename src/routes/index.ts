@@ -2,7 +2,15 @@ import express from 'express';
 import multer from 'multer';
 import { refreshTokenUser, loginUser, logoutUser, resetPasswordUser } from '../controllers/auth';
 import { getMyProfile, getUserByValue, registerAdmin, registerUser, updateUser } from '../controllers/user';
-import { loginSchema, logoutSchema, refreshTokenSchema, registerAdminSchema, registerSchema } from '../lib/validation';
+import { createBanner, deleteBanner, selectBanner, updateBanner } from '../controllers/banner';
+import {
+  bannerSchema,
+  loginSchema,
+  logoutSchema,
+  refreshTokenSchema,
+  registerAdminSchema,
+  registerSchema,
+} from '../lib/validation';
 import { checkSession } from '../middlewares';
 import { getNetworkList } from '../controllers/network';
 
@@ -56,11 +64,11 @@ router.get('/hello', (req, res) => {
 
 // auth
 router.post('/register', upload.single('avatar'), registerSchema, registerUser);
-router.post('/register/admin', checkSession, registerAdminSchema, registerAdmin);
 router.post('/login', loginSchema, loginUser);
+router.post('/reset-password', resetPasswordUser);
+router.post('/register/admin', checkSession, registerAdminSchema, registerAdmin);
 router.get('/refresh', checkSession, refreshTokenSchema, refreshTokenUser);
 router.post('/logout', checkSession, logoutSchema, logoutUser);
-router.post('/reset-password', resetPasswordUser);
 
 // users
 router.get('/user', checkSession, getUserByValue);
@@ -69,5 +77,11 @@ router.patch('/user', checkSession, updateUser);
 
 // networks
 router.get('/network', checkSession, getNetworkList);
+
+// banners
+router.get('/banner', checkSession, selectBanner);
+router.post('/banner', checkSession, upload.single('banner'), bannerSchema, createBanner);
+router.patch('/banner/:id', checkSession, updateBanner);
+router.delete('/banner/:id', checkSession, deleteBanner);
 
 export default router;

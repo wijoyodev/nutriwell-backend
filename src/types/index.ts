@@ -66,3 +66,11 @@ export type tokenPayload = {
 };
 
 export type QueryNetwork = { sort: string; offset: string; level?: string; upline_id?: string; user_id?: string };
+
+export type QueryBanner = {
+  id?: string;
+  code?: string;
+  search?: string;
+};
+
+export type BannerPayload = { title: string; description: string; image_url: string; code: string };

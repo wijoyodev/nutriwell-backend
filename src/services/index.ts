@@ -22,7 +22,7 @@ const execute = async (sql: string, values?: (string | number | undefined)[]) =>
 
 const query = async (sql: string) => {
   const connection = await pool.getConnection();
-  const result = await connection.query(sql);
+  const result = await connection.query<ResultSetHeader>(sql);
   connection.release();
   return result;
 };
