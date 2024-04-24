@@ -11,9 +11,9 @@ const getNetworkList = async (
   try {
     Logger.info(`Get network list -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
     const queries = req.query;
-    const resultNetwork = await findNetwork(queries);
+    const result = await findNetwork(queries);
     Logger.info(`Get network list -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
-    res.status(200).json(resultNetwork);
+    res.status(200).json({ result });
   } catch (err) {
     Logger.error(
       `Get network list -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: ${JSON.stringify(err)}`,

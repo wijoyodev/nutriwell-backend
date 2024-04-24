@@ -10,9 +10,9 @@ const registerUser = async (req: Request, res: Response, next: NextFunction) => 
   try {
     Logger.info(`Register user -client ${JSON.stringify(req.client)}- ${req.body.email}: start`);
     // validation for body request
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      throw { name: ERROR_NAME.BAD_REQUEST, message: result.array() };
+    const validation = validationResult(req);
+    if (!validation.isEmpty()) {
+      throw { name: ERROR_NAME.BAD_REQUEST, message: validation.array() };
     }
     // adjusting data to fit requirement
     const payload = {
@@ -23,9 +23,9 @@ const registerUser = async (req: Request, res: Response, next: NextFunction) => 
       date_of_birth: new Date(req.body.date_of_birth).toLocaleString('sv-SE'),
     };
     // registering flow start (hash password, create token and refresh token, save to DB)
-    const userCreds = await register(payload);
+    const result = await register(payload);
     Logger.info(`Register user -client ${JSON.stringify(req.client)}- ${req.body.email}: finish`);
-    res.status(201).json({ result: userCreds });
+    res.status(201).json({ result });
   } catch (err: unknown) {
     Logger.error(`Register user -client ${JSON.stringify(req.client)}- ${req.body.email}: ${JSON.stringify(err)}`);
     let errorPayload = err;
@@ -38,9 +38,9 @@ const registerAdmin = async (req: Request, res: Response, next: NextFunction) =>
   try {
     Logger.info(`Register admin -client ${JSON.stringify(req.client)}-: start`);
     // validation for body request
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      throw { name: ERROR_NAME.BAD_REQUEST, message: result.array() };
+    const validation = validationResult(req);
+    if (!validation.isEmpty()) {
+      throw { name: ERROR_NAME.BAD_REQUEST, message: validation.array() };
     }
     const { name, email, password, role } = req.body;
     const payload = {
@@ -50,9 +50,9 @@ const registerAdmin = async (req: Request, res: Response, next: NextFunction) =>
       role,
       status: '1',
     };
-    const resultAdmin = await registerNewAdmin(payload);
+    const result = await registerNewAdmin(payload);
     Logger.info(`Register admin -client ${JSON.stringify(req.client)}-: finish`);
-    res.status(201).json({ message: resultAdmin });
+    res.status(201).json({ result });
   } catch (err) {
     Logger.error(`Register admin -client ${JSON.stringify(req.client)}-: ${JSON.stringify(err)}`);
     let errorPayload = err;
@@ -88,6 +88,8 @@ const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     Logger.info(`Update user -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
     const payload = req.body;
+    if (Object.keys(req.body).length < 1)
+      throw { name: ERROR_NAME.BAD_REQUEST, message: 'Fields to be updated must be filled.' };
     const { editor, user_id, role } = req.user;
     if (!payload.id) throw { name: ERROR_NAME.BAD_REQUEST, message: 'id could not be empty.' };
     if (!editor) throw { name: ERROR_NAME.BAD_REQUEST, message: 'do not have access.' };
@@ -97,9 +99,9 @@ const updateUser = async (req: Request, res: Response, next: NextFunction) => {
     }
     if (role === '4' && payload.id !== user_id)
       throw { name: ERROR_NAME.BAD_REQUEST, message: 'do not have access to update.' };
-    const updateResult = await update(payload);
+    const result = await update(payload);
     Logger.info(`Update user -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
-    res.status(200).json({ status: updateResult, message: 'user updated.' });
+    res.status(200).json({ result: { status: result.affectedRows } });
   } catch (err) {
     Logger.error(`Update user -client ${JSON.stringify(req.client)}- ${req.user}: ${JSON.stringify(err)}`);
     let errorPayload = err;
@@ -112,9 +114,9 @@ const getMyProfile = async (req: Request, res: Response, next: NextFunction) => 
   try {
     Logger.info(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: start`);
     const { user_id } = req.user;
-    const resultProfile = user_id ? await findProfile(user_id) : [];
+    const result = user_id ? await findProfile(user_id) : [];
     Logger.info(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: finish`);
-    res.status(200).json({ data: resultProfile });
+    res.status(200).json({ result });
   } catch (err) {
     Logger.error(`Get my profile -client ${JSON.stringify(req.client)}- ${req.user}: ${JSON.stringify(err)}`);
     next(err);

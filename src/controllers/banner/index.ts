@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as bannerApi from '../../api/banner';
 import Logger from '../../lib/logger';
-import { QueryBanner } from '../../types';
+import { BannerPayload, QueryBanner } from '../../types';
 import { DOMAIN, ERROR_NAME } from '../../constants';
 import { validationResult } from 'express-validator';
 
@@ -34,15 +34,19 @@ const createBanner = async (req: Request, res: Response, next: NextFunction) => 
 const updateBanner = async (req: Request, res: Response, next: NextFunction) => {
   try {
     Logger.info(`Update Banner -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
-    if (!req.body.title) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Title must be in payload.' };
-    if (!req.body.description) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Description must be in payload.' };
+    const updateBanner: BannerPayload = {
+      ...req.body,
+    };
+    if (req.file) {
+      updateBanner.image_url = DOMAIN + req.file.path.split('uploads')[1];
+    }
 
     const result = await bannerApi.updateBanner({ ...req.body, id: req.params.id });
     Logger.info(`Update Banner -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ result: { status: result.affectedRows } });
   } catch (err) {
     Logger.error(
-      `Create Banner -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: ${JSON.stringify(err)}`,
+      `Update Banner -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: ${JSON.stringify(err)}`,
     );
     let errorPayload = err;
     if (err instanceof Error) errorPayload = { name: err.name, message: err.message };

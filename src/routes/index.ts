@@ -3,6 +3,7 @@ import multer from 'multer';
 import { refreshTokenUser, loginUser, logoutUser, resetPasswordUser } from '../controllers/auth';
 import { getMyProfile, getUserByValue, registerAdmin, registerUser, updateUser } from '../controllers/user';
 import { createBanner, deleteBanner, selectBanner, updateBanner } from '../controllers/banner';
+import { getNetworkList } from '../controllers/network';
 import {
   bannerSchema,
   loginSchema,
@@ -11,8 +12,7 @@ import {
   registerAdminSchema,
   registerSchema,
 } from '../lib/validation';
-import { checkSession } from '../middlewares';
-import { getNetworkList } from '../controllers/network';
+import { checkSession, isAdmin } from '../middlewares';
 
 const router = express.Router();
 const storage = multer.diskStorage({
@@ -66,7 +66,7 @@ router.get('/hello', (req, res) => {
 router.post('/register', upload.single('avatar'), registerSchema, registerUser);
 router.post('/login', loginSchema, loginUser);
 router.post('/reset-password', resetPasswordUser);
-router.post('/register/admin', checkSession, registerAdminSchema, registerAdmin);
+router.post('/register/admin', checkSession, isAdmin, registerAdminSchema, registerAdmin);
 router.get('/refresh', checkSession, refreshTokenSchema, refreshTokenUser);
 router.post('/logout', checkSession, logoutSchema, logoutUser);
 
@@ -80,8 +80,8 @@ router.get('/network', checkSession, getNetworkList);
 
 // banners
 router.get('/banner', checkSession, selectBanner);
-router.post('/banner', checkSession, upload.single('banner'), bannerSchema, createBanner);
-router.patch('/banner/:id', checkSession, updateBanner);
-router.delete('/banner/:id', checkSession, deleteBanner);
+router.post('/banner', checkSession, isAdmin, upload.single('banner'), bannerSchema, createBanner);
+router.patch('/banner/:id', checkSession, isAdmin, upload.single('banner'), updateBanner);
+router.delete('/banner/:id', checkSession, isAdmin, deleteBanner);
 
 export default router;

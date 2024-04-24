@@ -22,8 +22,14 @@ const updateBanner = async (requestPayload: { [key: string]: string }) => {
     keys,
     values,
   };
-  const [result] = await bannerService.updateBanner(dataPayload, id);
-  return result;
+  if (keys.length > 0) {
+    const [result] = await bannerService.updateBanner(dataPayload, id);
+    return result;
+  }
+
+  return {
+    affectedRows: 0,
+  };
 };
 
 const selectBanner = async (requestPayload: QueryBanner, methodQuery: string = 'and') => {
