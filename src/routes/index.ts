@@ -3,11 +3,13 @@ import multer from 'multer';
 import { refreshTokenUser, loginUser, logoutUser, resetPasswordUser } from '../controllers/auth';
 import { getMyProfile, getUserByValue, registerAdmin, registerUser, updateUser } from '../controllers/user';
 import { createBanner, deleteBanner, selectBanner, updateBanner } from '../controllers/banner';
+import { createProduct, selectProduct, updateProduct } from '../controllers/product';
 import { getNetworkList } from '../controllers/network';
 import {
   bannerSchema,
   loginSchema,
   logoutSchema,
+  productSchema,
   refreshTokenSchema,
   registerAdminSchema,
   registerSchema,
@@ -83,5 +85,10 @@ router.get('/banner', checkSession, selectBanner);
 router.post('/banner', checkSession, isAdmin, upload.single('banner'), bannerSchema, createBanner);
 router.patch('/banner/:id', checkSession, isAdmin, upload.single('banner'), updateBanner);
 router.delete('/banner/:id', checkSession, isAdmin, deleteBanner);
+
+// products
+router.get('/product', checkSession, selectProduct);
+router.post('/product', checkSession, isAdmin, upload.array('product', 8), productSchema, createProduct);
+router.patch('/product/:id', checkSession, isAdmin, upload.array('product', 8), updateProduct);
 
 export default router;
