@@ -14,6 +14,7 @@ export const clientInfo = (req: Request, _res: Response, next: NextFunction) => 
   req.user = {
     user_id: null,
     role: null,
+    editor: false,
   };
   next();
 };
@@ -30,12 +31,14 @@ export const checkSession = async (req: Request, _res: Response, next: NextFunct
         // verify token to check the payload is the same
         const tokenData = verifyToken(accessToken, String(user_id));
         const { payload } = tokenData;
-        if (String(user_id) !== (payload as tokenPayload).id)
+        if (String(user_id) !== String((payload as tokenPayload).id))
           throw { name: ERROR_NAME.UNAUTHORIZED, message: 'not match user' };
         req.headers.authorization = accessToken;
         req.user = {
           user_id: String(user_id),
-          role: (payload as tokenPayload).role || '1',
+          role: (payload as tokenPayload).role?.toString() || '1',
+          editor:
+            (payload as tokenPayload).role?.toString() === '1' || (payload as tokenPayload).role?.toString() === '4',
         };
         next();
       } else throw { name: ERROR_NAME.UNAUTHORIZED, message: 'token is invalid' };

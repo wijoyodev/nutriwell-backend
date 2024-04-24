@@ -7,11 +7,12 @@ export interface User {
   phone_number_country: string;
   date_of_birth: string;
   password: string;
-  confirm_password: string;
+  confirm_password?: string;
   referral_code: string;
   gender: string;
   email: string;
   avatar_url: string;
+  status: string;
   role?: string;
   referrer_code?: string;
 }
@@ -21,6 +22,7 @@ export interface UserAdmin {
   email: string;
   password: string;
   role: string;
+  status: string;
   code?: string;
 }
 
@@ -39,6 +41,7 @@ export type Client = {
 export type UserCredential = {
   user_id: string | null;
   role: string | null;
+  editor: boolean | null;
 };
 
 export interface ICustomError extends Error {
@@ -61,3 +64,5 @@ export type tokenPayload = {
   full_name: string;
   role?: string;
 };
+
+export type QueryNetwork = { sort: string; offset: string; level?: string; upline_id?: string; user_id?: string };

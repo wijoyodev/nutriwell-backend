@@ -30,11 +30,6 @@ export const registerSchema = checkSchema({
       errorMessage: FIELD_EMPTY,
     },
   },
-  referrer_code: {
-    notEmpty: {
-      errorMessage: FIELD_EMPTY,
-    },
-  },
   full_name: {
     notEmpty: {
       errorMessage: FIELD_EMPTY,
@@ -71,6 +66,11 @@ export const registerAdminSchema = checkSchema({
     },
   },
   role: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  status: {
     notEmpty: {
       errorMessage: FIELD_EMPTY,
     },
