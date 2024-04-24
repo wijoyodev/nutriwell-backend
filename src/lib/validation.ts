@@ -139,3 +139,21 @@ export const bannerSchema = checkSchema({
     },
   },
 });
+
+export const productSchema = checkSchema({
+  product_name: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  price: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  description: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+});
