@@ -22,6 +22,7 @@ export interface UserAdmin {
   email: string;
   password: string;
   role: string;
+  status: string;
   code?: string;
 }
 

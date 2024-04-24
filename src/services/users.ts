@@ -28,12 +28,12 @@ export const createUser = async (payload: { [key: string]: string }) => {
 };
 
 export const createAdmin = async (payload: UserAdmin) => {
-  const { full_name, email, password, code, role = 4 } = payload;
+  const { full_name, email, password, code, status = '1', role = 4 } = payload;
   await query(`DROP TRIGGER IF EXISTS add_network;`);
   return await execute(
-    `INSERT INTO users(code,role,full_name,email,password) 
-      VALUES(?,?,?,?,?);`,
-    [code, role, full_name, email, password],
+    `INSERT INTO users(code,role,full_name,email,password,status) 
+      VALUES(?,?,?,?,?,?);`,
+    [code, role, full_name, email, password, status],
   );
 };
 

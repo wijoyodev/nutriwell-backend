@@ -70,6 +70,11 @@ export const registerAdminSchema = checkSchema({
       errorMessage: FIELD_EMPTY,
     },
   },
+  status: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
 });
 
 export const refreshTokenSchema = checkSchema({

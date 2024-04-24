@@ -56,7 +56,7 @@ router.get('/hello', (req, res) => {
 
 // auth
 router.post('/register', upload.single('avatar'), registerSchema, registerUser);
-router.post('/register/admin', registerAdminSchema, registerAdmin);
+router.post('/register/admin', checkSession, registerAdminSchema, registerAdmin);
 router.post('/login', loginSchema, loginUser);
 router.get('/refresh', checkSession, refreshTokenSchema, refreshTokenUser);
 router.post('/logout', checkSession, logoutSchema, logoutUser);
