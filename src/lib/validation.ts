@@ -126,3 +126,34 @@ export const logoutSchema = checkSchema({
     },
   },
 });
+
+export const bannerSchema = checkSchema({
+  title: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  description: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+});
+
+export const productSchema = checkSchema({
+  product_name: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  price: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  description: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+});

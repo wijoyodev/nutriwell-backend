@@ -2,9 +2,19 @@ import express from 'express';
 import multer from 'multer';
 import { refreshTokenUser, loginUser, logoutUser, resetPasswordUser } from '../controllers/auth';
 import { getMyProfile, getUserByValue, registerAdmin, registerUser, updateUser } from '../controllers/user';
-import { loginSchema, logoutSchema, refreshTokenSchema, registerAdminSchema, registerSchema } from '../lib/validation';
-import { checkSession } from '../middlewares';
+import { createBanner, deleteBanner, selectBanner, updateBanner } from '../controllers/banner';
+import { createProduct, selectProduct, updateProduct } from '../controllers/product';
 import { getNetworkList } from '../controllers/network';
+import {
+  bannerSchema,
+  loginSchema,
+  logoutSchema,
+  productSchema,
+  refreshTokenSchema,
+  registerAdminSchema,
+  registerSchema,
+} from '../lib/validation';
+import { checkSession, isAdmin } from '../middlewares';
 
 const router = express.Router();
 const storage = multer.diskStorage({
@@ -56,11 +66,11 @@ router.get('/hello', (req, res) => {
 
 // auth
 router.post('/register', upload.single('avatar'), registerSchema, registerUser);
-router.post('/register/admin', checkSession, registerAdminSchema, registerAdmin);
 router.post('/login', loginSchema, loginUser);
+router.post('/reset-password', resetPasswordUser);
+router.post('/register/admin', checkSession, isAdmin, registerAdminSchema, registerAdmin);
 router.get('/refresh', checkSession, refreshTokenSchema, refreshTokenUser);
 router.post('/logout', checkSession, logoutSchema, logoutUser);
-router.post('/reset-password', resetPasswordUser);
 
 // users
 router.get('/user', checkSession, getUserByValue);
@@ -69,5 +79,16 @@ router.patch('/user', checkSession, updateUser);
 
 // networks
 router.get('/network', checkSession, getNetworkList);
+
+// banners
+router.get('/banner', checkSession, selectBanner);
+router.post('/banner', checkSession, isAdmin, upload.single('banner'), bannerSchema, createBanner);
+router.patch('/banner/:id', checkSession, isAdmin, upload.single('banner'), updateBanner);
+router.delete('/banner/:id', checkSession, isAdmin, deleteBanner);
+
+// products
+router.get('/product', checkSession, selectProduct);
+router.post('/product', checkSession, isAdmin, upload.array('product', 8), productSchema, createProduct);
+router.patch('/product/:id', checkSession, isAdmin, upload.array('product', 8), updateProduct);
 
 export default router;

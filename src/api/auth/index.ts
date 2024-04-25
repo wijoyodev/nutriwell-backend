@@ -90,7 +90,7 @@ export const logout = async (email: string, refresh_token: string) => {
     verifyToken(refresh_token, String(id));
     // delete session
     const [deleteResult] = await deleteSession(id, refresh_token);
-    if (deleteResult && deleteResult.affectedRows) return deleteResult.affectedRows;
+    if (deleteResult && deleteResult.affectedRows) return deleteResult;
     else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not delete session' };
   } else throw { name: ERROR_NAME.NOT_FOUND, message: 'Email not found.' };
 };

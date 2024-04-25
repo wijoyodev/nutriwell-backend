@@ -138,16 +138,16 @@ export const update = async (data: { [key: string]: string }) => {
     }
   }
   if (data.password) data.password = await bcrypt.hash(data.password, 10);
-  const field = [];
-  const values = [];
-  for (const key in rest) {
-    field.push(key);
-    values.push(data[key]);
-  }
+  const field = Object.keys(rest);
+  const values = Object.values(rest);
+  if (field.length < 1)
+    return {
+      affectedRows: 0,
+    };
   const [result] = await updateUser(field, ['id'], [...values, String(id)]);
   if (result.affectedRows) {
     if (referrerNewId) await updateNetworkLevel(referrerNewId);
     if (referrerOldId) await updateNetworkLevel(referrerOldId);
-    return result.affectedRows;
+    return result;
   } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not update user.' };
 };

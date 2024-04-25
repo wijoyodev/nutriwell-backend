@@ -49,6 +49,24 @@ export const checkSession = async (req: Request, _res: Response, next: NextFunct
   }
 };
 
+export const isAdmin = async (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    const { role } = req.user;
+    switch (role) {
+      case '1':
+      case '2':
+      case '3':
+        next();
+        break;
+      case '4':
+        throw { name: ERROR_NAME.ACCESS_DENIED, message: 'role is not admin' };
+    }
+  } catch (err) {
+    Logger.error(`Middleware check access admin -client ${JSON.stringify(req.client)}-: ${JSON.stringify(err)}`);
+    next(err);
+  }
+};
+
 export const errorMiddleware = (err: CustomError, _req: Request, res: Response, _next: NextFunction) => {
   let code = 500;
   let name = err.name;
