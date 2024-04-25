@@ -13,8 +13,10 @@ import {
   refreshTokenSchema,
   registerAdminSchema,
   registerSchema,
+  shipmentSchema,
 } from '../lib/validation';
 import { checkSession, isAdmin } from '../middlewares';
+import { createShipment, selectShipment, updateShipment } from '../controllers/shipment';
 
 const router = express.Router();
 const storage = multer.diskStorage({
@@ -90,5 +92,10 @@ router.delete('/banner/:id', checkSession, isAdmin, deleteBanner);
 router.get('/product', checkSession, selectProduct);
 router.post('/product', checkSession, isAdmin, upload.array('product', 8), productSchema, createProduct);
 router.patch('/product/:id', checkSession, isAdmin, upload.array('product', 8), updateProduct);
+
+// shipments
+router.get('/address', checkSession, selectShipment);
+router.post('/address', checkSession, isAdmin, shipmentSchema, createShipment);
+router.patch('/address', checkSession, isAdmin, updateShipment);
 
 export default router;

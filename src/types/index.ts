@@ -83,6 +83,25 @@ export type ProductPayload = {
   product_weight?: number;
 };
 
+export type ShipmentPayload = {
+  user_id: string;
+  recipient_name: string;
+  recipient_phone_number: string;
+  phone_number_country: string;
+  province: string;
+  city: string;
+  district: string;
+  subdistrict: string;
+  address_detail: string;
+  postal_code?: string;
+};
+
+export type QueryShipment = {
+  id?: string;
+  user_id?: string;
+  search?: string;
+};
+
 export type QueryProduct = {
   id?: string;
   search?: string;

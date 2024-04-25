@@ -157,3 +157,51 @@ export const productSchema = checkSchema({
     },
   },
 });
+
+export const shipmentSchema = checkSchema({
+  recipient_name: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  recipient_phone_number: {
+    isMobilePhone: {
+      options: ['any'],
+    },
+  },
+  phone_number_country: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  province: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  city: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  district: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  subdistrict: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  address_detail: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  postal_code: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+});

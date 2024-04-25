@@ -93,6 +93,11 @@ export const errorMiddleware = (err: CustomError, _req: Request, res: Response, 
       break;
   }
 
+  // for unique data across table
+  if (err.message.includes('Duplicate')) {
+    code = 400;
+    name = ERROR_NAME.BAD_REQUEST;
+  }
   const errorPayload = {
     message: name,
   };
