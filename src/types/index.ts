@@ -74,3 +74,16 @@ export type QueryBanner = {
 };
 
 export type BannerPayload = { title: string; description: string; image_url: string; code: string };
+
+export type ProductPayload = {
+  product_name: string;
+  description: string;
+  product_images: string;
+  price: number;
+  product_weight?: number;
+};
+
+export type QueryProduct = {
+  id?: string;
+  search?: string;
+};
