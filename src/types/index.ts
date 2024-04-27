@@ -65,14 +65,6 @@ export type tokenPayload = {
   role?: string;
 };
 
-export type QueryNetwork = { sort: string; offset: string; level?: string; upline_id?: string; user_id?: string };
-
-export type QueryBanner = {
-  id?: string;
-  code?: string;
-  search?: string;
-};
-
 export type BannerPayload = { title: string; description: string; image_url: string; code: string };
 
 export type ProductPayload = {
@@ -96,13 +88,80 @@ export type ShipmentPayload = {
   postal_code?: string;
 };
 
-export type QueryShipment = {
+export type OrderPayload = {
+  user_id: number;
+  code: string;
+  cart_id: number;
+  address_shipment_id: number;
+  order_number: string;
+  status: number;
+  courier_name: string;
+  courier_company?: string;
+  courier_type?: string;
+  courier_service_name: string;
+  courier_rate: number;
+  total_purchase: number;
+  external_id?: string;
+  payment_date?: string;
+  receive_date?: string;
+  delivery_date?: string;
+  payment_method?: string;
+  shipment_number?: string;
+  reasons?: string;
+};
+
+export type CartPayload = {
+  user_id: string;
+  product_id: string;
+  quantity: number;
+  total_weight?: number;
+  total_price?: number;
+};
+
+export type QueryBase = {
   id?: string;
-  user_id?: string;
   search?: string;
 };
 
-export type QueryProduct = {
-  id?: string;
-  search?: string;
+export type QueryShipment = QueryBase & { user_id?: string };
+
+export type QueryOrders = QueryBase & { status?: number };
+
+export type QueryProduct = QueryBase;
+
+export type QueryCart = QueryBase & {
+  user_id: string;
 };
+
+export type QueryNetwork = { sort: string; offset: string; level?: string; upline_id?: string; user_id?: string };
+
+export type QueryBanner = QueryBase & {
+  code?: string;
+};
+
+export type RateResponse = {
+  success: boolean;
+  pricing: {
+    [key: string]: number | boolean | string | string[];
+  }[];
+  error?: string;
+};
+
+export type FetcherVariables = { [key: string]: string | undefined };
+
+export type FetcherOptions = {
+  queryString: string;
+  variables?: FetcherVariables;
+};
+
+export type FetcherResults<T> = {
+  result: T;
+};
+
+export enum Order {
+  'Belum Bayar' = 0,
+  'Dikemas' = 1,
+  'Dikirim' = 2,
+  'Selesai' = 3,
+  'Dibatalkan' = 4,
+}

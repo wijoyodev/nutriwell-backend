@@ -205,3 +205,97 @@ export const shipmentSchema = checkSchema({
     },
   },
 });
+
+export const cartSchema = checkSchema({
+  product_id: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  quantity: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+});
+
+export const orderSchema = checkSchema({
+  user_id: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  address_shipment_id: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  cart_id: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  courier_company: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  courier_name: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  courier_service_name: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  courier_rate: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  courier_type: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  total_purchase: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+});
+
+export const rateSchema = checkSchema({
+  destination_postal_code: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  items: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  'items.*.name': {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  'items.*.weight': {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  'items.*.value': {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+  'items.*.quantity': {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    },
+  },
+});

@@ -2,9 +2,10 @@ import { NextFunction, Response, Request } from 'express';
 import { validationResult } from 'express-validator';
 import Logger from '../../lib/logger';
 import { phoneNumberChecker, referralCodeGenerator } from '../../utils';
-import { CONFIRM_PASSWORD_ERROR, DOMAIN, ERROR_NAME } from '../../constants';
+import { CONFIRM_PASSWORD_ERROR, ERROR_NAME } from '../../constants';
 import { findProfile, findUser, register, registerAdmin as registerNewAdmin, update } from '../../api/user';
 import { UserQueries } from '../../types';
+import { API_URL } from '../../settings';
 
 const registerUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -17,7 +18,7 @@ const registerUser = async (req: Request, res: Response, next: NextFunction) => 
     // adjusting data to fit requirement
     const payload = {
       ...req.body,
-      avatar_url: req.file ? DOMAIN + req.file?.path.split('uploads')[1] : null,
+      avatar_url: req.file ? API_URL + req.file?.path.split('uploads')[1] : null,
       phone_number: phoneNumberChecker(req.body.phone_number),
       referral_code: referralCodeGenerator(),
       date_of_birth: new Date(req.body.date_of_birth).toLocaleString('sv-SE'),

@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import * as productApi from '../../api/product';
 import Logger from '../../lib/logger';
 import { ProductPayload, QueryProduct } from '../../types';
-import { DOMAIN, ERROR_NAME } from '../../constants';
+import { ERROR_NAME } from '../../constants';
+import { API_URL } from '../../settings';
 import { validationResult } from 'express-validator';
 const createProduct = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -13,7 +14,7 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
     }
     if (Array.isArray(req.files)) {
       if (req.files.length < 1) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Images are not uploaded.' };
-      const product_images = req.files?.map((item: Express.Multer.File) => DOMAIN + item.path.split('uploads')[1]);
+      const product_images = req.files?.map((item: Express.Multer.File) => API_URL + item.path.split('uploads')[1]);
       const createPayload: ProductPayload = {
         product_images: JSON.stringify(product_images),
         product_name: req.body.product_name,
@@ -41,7 +42,7 @@ const updateProduct = async (req: Request, res: Response, next: NextFunction) =>
       ...req.body,
     };
     if (Array.isArray(req.files) && req.files.length > 0) {
-      const product_images = req.files.map((item: Express.Multer.File) => DOMAIN + item.path.split('uploads')[1]);
+      const product_images = req.files.map((item: Express.Multer.File) => API_URL + item.path.split('uploads')[1]);
       updateProduct.product_images = JSON.stringify(product_images);
     }
     const result = await productApi.updateProduct({ ...updateProduct, id: req.params.id });

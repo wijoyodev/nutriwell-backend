@@ -1,15 +1,8 @@
 import * as bannerService from '../../services/banners';
 import { BannerPayload, QueryBanner } from '../../types';
-import { identityGenerator, queriesMaker } from '../../utils';
+import { queriesMaker } from '../../utils';
 const createBanner = async (requestPayload: { title: string; description: string; image_url: string }) => {
-  const [banner] = await bannerService.selectBanner();
   const dataPayload: BannerPayload = { ...requestPayload, code: '' };
-  let bannerCode = Math.round(Math.random() * 10);
-  if (Array.isArray(banner) && banner.length > 0) {
-    const { id } = banner[banner.length - 1];
-    bannerCode = id;
-  }
-  dataPayload.code = identityGenerator('6') + '0' + (bannerCode + 1);
   const [result] = await bannerService.createBanner(dataPayload);
   return result;
 };

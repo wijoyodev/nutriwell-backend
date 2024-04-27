@@ -1,4 +1,4 @@
-import * as productService from '../../services/product';
+import * as productService from '../../services/products';
 import { ProductPayload, QueryProduct } from '../../types';
 import { queriesMaker } from '../../utils';
 

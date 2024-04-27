@@ -6,13 +6,11 @@ import {
   findSelf,
   findUserByValue,
   findUserNetworkList,
-  getUserMaxValue,
   updateUser,
 } from '../../services/users';
 import { signToken } from '../auth';
 import { ERROR_NAME } from '../../constants';
 import { createSession } from '../../services/sessions';
-import { identityGenerator } from '../../utils';
 import { findNetworkByCode, updateNetworkLevel } from '../../services/networks';
 
 export const register = async (data: User) => {
@@ -29,8 +27,6 @@ export const register = async (data: User) => {
     }
   }
 
-  const [user] = await getUserMaxValue();
-  const totalUsers = Array.isArray(user) && user.length > 0 ? user[0].total + 1 : 0;
   if (Array.isArray(usersFound) && usersFound.length < 1) {
     const { password, ...rest } = data;
     // hash password
@@ -41,8 +37,7 @@ export const register = async (data: User) => {
     };
     // modify the id based on role
     const userRole = payload.role || '4';
-    const userId = identityGenerator(userRole) + '0' + totalUsers;
-    payload.code = userId;
+    payload.code = '';
     payload.status = '1';
     payload.confirm_password = undefined;
     // create new user in DB
@@ -73,8 +68,6 @@ export const register = async (data: User) => {
 export const registerAdmin = async (data: UserAdmin) => {
   // check whether user exists
   const [usersFound] = await findUserByValue([data.email], ['email']);
-  const [user] = await getUserMaxValue();
-  const totalUsers = Array.isArray(user) && user.length > 0 ? user[0].total + 1 : 0;
   if (Array.isArray(usersFound) && usersFound.length < 1) {
     // hash password
     const { password, ...rest } = data;
@@ -83,10 +76,7 @@ export const registerAdmin = async (data: UserAdmin) => {
       ...rest,
       password: hashedPassword,
     };
-    // modify the id based on role
-    const userRole = payload.role || '3';
-    const userId = identityGenerator(userRole) + '0' + totalUsers;
-    payload.code = userId;
+    payload.code = '';
     // create new user in DB
     const [result] = await createAdmin(payload);
     if (result) {

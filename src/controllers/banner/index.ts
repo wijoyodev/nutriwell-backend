@@ -2,8 +2,9 @@ import { Request, Response, NextFunction } from 'express';
 import * as bannerApi from '../../api/banner';
 import Logger from '../../lib/logger';
 import { BannerPayload, QueryBanner } from '../../types';
-import { DOMAIN, ERROR_NAME } from '../../constants';
+import { ERROR_NAME } from '../../constants';
 import { validationResult } from 'express-validator';
+import { API_URL } from '../../settings';
 
 const createBanner = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -14,7 +15,7 @@ const createBanner = async (req: Request, res: Response, next: NextFunction) => 
     }
     if (!req.file) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Image is not uploaded.' };
     const createPayload = {
-      image_url: DOMAIN + req.file?.path.split('uploads')[1],
+      image_url: API_URL + req.file?.path.split('uploads')[1],
       title: req.body.title,
       description: req.body.description,
     };
@@ -38,9 +39,8 @@ const updateBanner = async (req: Request, res: Response, next: NextFunction) => 
       ...req.body,
     };
     if (req.file) {
-      updateBanner.image_url = DOMAIN + req.file.path.split('uploads')[1];
+      updateBanner.image_url = API_URL + req.file.path.split('uploads')[1];
     }
-
     const result = await bannerApi.updateBanner({ ...req.body, id: req.params.id });
     Logger.info(`Update Banner -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ result: { status: result.affectedRows } });

@@ -1,9 +1,10 @@
 import * as shipmentService from '../../services/shipments';
 import { QueryShipment, ShipmentPayload } from '../../types';
-import { queriesMaker } from '../../utils';
+import { phoneNumberChecker, queriesMaker } from '../../utils';
 
 const createShipment = async (requestPayload: ShipmentPayload) => {
   const dataPayload: ShipmentPayload = { ...requestPayload };
+  dataPayload.recipient_phone_number = phoneNumberChecker(dataPayload.recipient_phone_number);
   const [result] = await shipmentService.createShipment(dataPayload);
   return result;
 };

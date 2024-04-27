@@ -93,8 +93,8 @@ export const errorMiddleware = (err: CustomError, _req: Request, res: Response, 
       break;
   }
 
-  // for unique data across table
-  if (err.message.includes('Duplicate')) {
+  // for unique data and unkown column in DB across table
+  if (err.message.includes('Duplicate') || err.message.includes('Unknown column')) {
     code = 400;
     name = ERROR_NAME.BAD_REQUEST;
   }

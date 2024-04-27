@@ -8,30 +8,47 @@ export const phoneNumberChecker = (phone: string) => {
 
 export const referralCodeGenerator = () => Math.random().toString(36).substring(2, 7).toUpperCase();
 
-export const identityGenerator = (role: string) => {
-  let userId = 'UN';
-  switch (role) {
-    case '1':
-    case '2':
-    case '3':
-      userId = 'AD';
+export const orderGenerator = () => Math.floor(100000000 + Math.random() * 900000000);
+
+export const statusOrderGenerator = (statusCode: string, source: string) => {
+  let status = 0;
+  let message = '';
+  switch (statusCode) {
+    case 'PAID':
+    case 'SETTLED':
+      status = 1;
       break;
-    case '4':
-      userId = 'CU';
+    case 'UNPAID':
+    case 'PENDING':
+      status = 0;
       break;
-    case '5':
-      userId = 'DI';
+    case 'EXPIRED':
+      status = 4;
+      message = 'Payment Expired.';
       break;
-    case '6':
-      userId = 'BA';
+    case 'rejected':
+    case 'courier_not_found':
+    case 'cancelled':
+    case 'returned':
+    case 'disposed':
+      status = 4;
+      message = 'Order has been rejected/courier not found/cancelled/returned by biteship.';
+      break;
+    case 'delivered':
+      status = 3;
       break;
     default:
+      status = source === 'xendit' ? 0 : 2;
       break;
   }
-  return userId;
+  return { status, message };
 };
 
-export const queriesMaker = (queriesPayload: { [key: string]: string | number }, methodQuery: string) => {
+export const queriesMaker = (
+  queriesPayload: { [key: string]: string | number },
+  methodQuery: string,
+  alias?: string,
+) => {
   const andObject = {};
   const matchObject = {};
   const orObject = {};
@@ -56,7 +73,7 @@ export const queriesMaker = (queriesPayload: { [key: string]: string | number },
       objectQueries[key] = {
         condition: Object.keys(queries[key])
           .filter((item) => item)
-          .map((item) => `${item} = ?`),
+          .map((item) => `${alias + '.'}${item} = ?`),
         value: Object.values(queries[key]).filter((item) => item),
       };
   }
@@ -88,4 +105,15 @@ export const queriesMaker = (queriesPayload: { [key: string]: string | number },
   } else if (orQuery) queryTemplate = `WHERE ${orQuery}`;
   Logger.info(`condition SQL generated for the process: ${queryTemplate}`);
   return { queryTemplate, queryValue };
+};
+
+export const apiCall = async <T>(
+  api_url: string,
+  options: { [key: string]: string | string[] | Headers },
+): Promise<T> => {
+  Logger.info(`API call to ${api_url}: start`);
+  const res = await fetch(api_url, options);
+  const result = (await res.json()) as T;
+  Logger.info(`API call to ${api_url}: finish`);
+  return result;
 };

@@ -7,9 +7,12 @@ import { createProduct, selectProduct, updateProduct } from '../controllers/prod
 import { getNetworkList } from '../controllers/network';
 import {
   bannerSchema,
+  cartSchema,
   loginSchema,
   logoutSchema,
+  orderSchema,
   productSchema,
+  rateSchema,
   refreshTokenSchema,
   registerAdminSchema,
   registerSchema,
@@ -17,6 +20,16 @@ import {
 } from '../lib/validation';
 import { checkSession, isAdmin } from '../middlewares';
 import { createShipment, selectShipment, updateShipment } from '../controllers/shipment';
+import { createCart, deleteCart, selectCart } from '../controllers/cart';
+import {
+  createOrder,
+  getTracking,
+  selectOrderById,
+  selectOrders,
+  updateOrder,
+  updateOrderWebhook,
+} from '../controllers/order';
+import { getRates } from '../controllers/courier-rate';
 
 const router = express.Router();
 const storage = multer.diskStorage({
@@ -71,7 +84,7 @@ router.post('/register', upload.single('avatar'), registerSchema, registerUser);
 router.post('/login', loginSchema, loginUser);
 router.post('/reset-password', resetPasswordUser);
 router.post('/register/admin', checkSession, isAdmin, registerAdminSchema, registerAdmin);
-router.get('/refresh', checkSession, refreshTokenSchema, refreshTokenUser);
+router.post('/refresh', checkSession, refreshTokenSchema, refreshTokenUser);
 router.post('/logout', checkSession, logoutSchema, logoutUser);
 
 // users
@@ -95,7 +108,23 @@ router.patch('/product/:id', checkSession, isAdmin, upload.array('product', 8), 
 
 // shipments
 router.get('/address', checkSession, selectShipment);
-router.post('/address', checkSession, isAdmin, shipmentSchema, createShipment);
+router.post('/address', checkSession, shipmentSchema, createShipment);
 router.patch('/address', checkSession, isAdmin, updateShipment);
+
+// cart
+router.get('/cart', checkSession, selectCart);
+router.post('/cart', checkSession, isAdmin, cartSchema, createCart);
+router.delete('/cart/:id', checkSession, deleteCart);
+
+// orders
+router.get('/order/:id', checkSession, selectOrderById);
+router.get('/orders', checkSession, selectOrders);
+router.get('/order/track/:external_id', checkSession, getTracking);
+router.post('/order', checkSession, orderSchema, createOrder);
+router.post('/order/webhook', updateOrderWebhook);
+router.patch('/order/:id', checkSession, isAdmin, updateOrder);
+
+//biteship
+router.post('/courier-rates', checkSession, rateSchema, getRates);
 
 export default router;
