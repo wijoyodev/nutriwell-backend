@@ -21,7 +21,12 @@ const createCart = async (requestPayload: CartPayload) => {
 const selectCart = async (requestPayload: QueryCart, methodQuery: string = 'and') => {
   const { queryTemplate, queryValue } = queriesMaker(requestPayload, methodQuery);
   const [result] = await cartService.selectCart(queryTemplate, queryValue);
-  return result;
+  if (Array.isArray(result) && result.length > 0) {
+    result[0].total_price = parseFloat(result[0].total_price);
+    result[0].price = parseFloat(result[0].price);
+    result[0].product_images = JSON.parse(result[0].product_images);
+    return result;
+  } else return [];
 };
 
 const deleteCart = async (requestPayload: string) => {

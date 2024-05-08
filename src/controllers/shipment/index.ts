@@ -89,4 +89,21 @@ const selectShipment = async (
   }
 };
 
-export { createShipment, updateShipment, selectShipment };
+const selectMyShipment = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    Logger.info(`Select Shipment -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
+    const { user_id } = req.user;
+    const result = await shipmentApi.selectShipment({ user_id: user_id ?? '' });
+    Logger.info(`Select Shipment -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
+    res.status(200).json({ result });
+  } catch (err) {
+    Logger.error(
+      `Select Shipment -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: ${JSON.stringify(err)}`,
+    );
+    let errorPayload = err;
+    if (err instanceof Error) errorPayload = { name: err.name, message: err.message };
+    next(errorPayload);
+  }
+};
+
+export { createShipment, updateShipment, selectShipment, selectMyShipment };

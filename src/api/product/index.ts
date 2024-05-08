@@ -33,7 +33,11 @@ const updateProduct = async (requestPayload: { [key: string]: string | number })
 const selectProduct = async (requestPayload: QueryProduct, methodQuery: string = 'and') => {
   const { queryTemplate, queryValue } = queriesMaker(requestPayload, methodQuery);
   const [result] = await productService.selectProduct(queryTemplate, queryValue);
-  return result;
+  if (Array.isArray(result) && result.length > 0) {
+    result[0].price = parseFloat(result[0].price);
+    result[0].product_images = JSON.parse(result[0].product_images);
+    return result;
+  } else return [];
 };
 
 export { createProduct, updateProduct, selectProduct };

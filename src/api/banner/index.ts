@@ -9,8 +9,9 @@ const createBanner = async (requestPayload: { title: string; description: string
 
 const updateBanner = async (requestPayload: { [key: string]: string }) => {
   const { id, ...rest } = requestPayload;
+  Object.keys(rest).forEach((field) => !rest[field] && delete rest[field]);
   const keys = Object.keys(rest).map((item) => `${item} = ?`);
-  const values = Object.values(rest);
+  const values = Object.values(rest).filter((item) => item);
   const dataPayload = {
     keys,
     values,

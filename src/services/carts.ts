@@ -16,7 +16,7 @@ const createCart = async (payload: CartPayload) => {
 
 const selectCart = async (conditionSql?: string, conditionValue?: string[]) => {
   return await execute(
-    `SELECT c.*,p.product_name,p.product_images,p.price FROM carts c JOIN products p ON p.id = c.product_id ${conditionSql}`,
+    `SELECT c.*,p.product_name,p.product_images,p.price,p.product_weight FROM carts c JOIN products p ON p.id = c.product_id ${conditionSql}`,
     conditionValue,
   );
 };

@@ -38,7 +38,8 @@ const selectCart = async (
   try {
     Logger.info(`Select Product -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
     const { id, user_id, search } = req.query;
-    const result = await cartApi.selectCart({ id, user_id, search }, 'and');
+    const { user_id: user_id_mid } = req.user;
+    const result = await cartApi.selectCart({ id, user_id: user_id ?? user_id_mid, search }, 'and');
     Logger.info(`Select Product -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ result });
   } catch (err) {

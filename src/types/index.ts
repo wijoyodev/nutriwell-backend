@@ -1,7 +1,6 @@
 import { Request as ExpressRequest } from 'express';
 
 export interface User {
-  code: string;
   full_name: string;
   phone_number: string;
   phone_number_country: string;
@@ -11,10 +10,12 @@ export interface User {
   referral_code: string;
   gender: string;
   email: string;
-  avatar_url: string;
-  status: string;
-  role?: string;
+  code?: string;
+  avatar_url?: string;
+  status?: number;
+  role?: number;
   referrer_code?: string;
+  referrer_id?: string;
 }
 
 export interface UserAdmin {
@@ -22,15 +23,9 @@ export interface UserAdmin {
   email: string;
   password: string;
   role: string;
-  status: string;
+  status: number;
   code?: string;
 }
-
-export type UserQueries = {
-  id?: string;
-  role?: string;
-  email?: string;
-};
 
 export type Client = {
   id: string | null;
@@ -89,7 +84,7 @@ export type ShipmentPayload = {
 };
 
 export type OrderPayload = {
-  user_id: number;
+  user_id: string;
   code: string;
   cart_id: number;
   address_shipment_id: number;
@@ -108,6 +103,10 @@ export type OrderPayload = {
   payment_method?: string;
   shipment_number?: string;
   reasons?: string;
+  courier_max_time?: number;
+  estimated_delivery_date?: string;
+  payment_expiry_date?: string;
+  payment_url?: string;
 };
 
 export type CartPayload = {
@@ -125,12 +124,18 @@ export type QueryBase = {
 
 export type QueryShipment = QueryBase & { user_id?: string };
 
-export type QueryOrders = QueryBase & { status?: number };
+export type QueryOrders = QueryBase & { user_id?: string; status?: number; sort?: string; offset?: string };
 
 export type QueryProduct = QueryBase;
 
 export type QueryCart = QueryBase & {
   user_id: string;
+};
+
+export type QueryUser = QueryBase & {
+  role?: string;
+  email?: string;
+  userType?: string;
 };
 
 export type QueryNetwork = { sort: string; offset: string; level?: string; upline_id?: string; user_id?: string };

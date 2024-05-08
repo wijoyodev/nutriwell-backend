@@ -13,9 +13,9 @@ const access: PoolOptions = {
 
 const pool = mysql.createPool(access);
 
-const execute = async (sql: string, values?: (string | number | undefined)[]) => {
+const execute = async <T>(sql: string, values?: (string | number | undefined)[]) => {
   const connection = await pool.getConnection();
-  const result = await connection.execute<ResultSetHeader>(sql, values);
+  const result = await connection.execute<ResultSetHeader & T>(sql, values);
   connection.release();
   return result;
 };

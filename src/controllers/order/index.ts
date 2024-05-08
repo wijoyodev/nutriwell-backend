@@ -13,8 +13,9 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
     if (!validation.isEmpty()) {
       throw { name: ERROR_NAME.BAD_REQUEST, message: validation.array() };
     }
+    const { user_id } = req.user;
+    if (!user_id) throw { name: ERROR_NAME.ACCESS_DENIED, message: 'No user id found from middleware.' };
     const {
-      user_id,
       cart_id,
       address_shipment_id,
       courier_name,
@@ -23,6 +24,7 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
       courier_type,
       courier_company,
       total_purchase,
+      shipment_duration_range,
     } = req.body;
     const createPayload = {
       user_id,
@@ -34,6 +36,7 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
       courier_type,
       courier_company,
       total_purchase,
+      shipment_duration_range,
     };
     const result = await orderApi.createOrder(createPayload);
     Logger.info(`Create Order -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
@@ -70,10 +73,12 @@ const updateOrder = async (req: Request, res: Response, next: NextFunction) => {
 const updateOrderWebhook = async (req: Request, res: Response, next: NextFunction) => {
   try {
     Logger.info(`Update Order Via Webhook -client ${JSON.stringify(req.client)}-: start`);
+    // check for token headers, token xendit and biteship are the same
     if (req.headers['x-callback-token']) {
       if (req.headers['x-callback-token'] !== XENDIT_WEBHOOK_TOKEN)
         throw { name: ERROR_NAME.ACCESS_DENIED, message: 'Webhook with invalid token' };
       else if (Object.keys(req.body).length > 1) {
+        // adjust payload to update orders
         const updatePayload: {
           status?: number;
           payment_method?: string;
@@ -85,7 +90,6 @@ const updateOrderWebhook = async (req: Request, res: Response, next: NextFunctio
           receive_date?: string;
         } = {};
         const { status, payment_method, external_id, order_id, courier_waybill_id } = req.body;
-
         const { status: statusGenerated, message } = statusOrderGenerator(
           status,
           payment_method ? 'xendit' : 'biteship',
@@ -122,8 +126,30 @@ const selectOrders = async (
 ) => {
   try {
     Logger.info(`Select orders -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
-    const { id, status, search } = req.query;
-    const result = await orderApi.selectOrders({ id, status, search }, 'and');
+    const { id, status, search, sort, offset } = req.query;
+    const result = await orderApi.selectOrders({ id, status, search, sort, offset }, 'and');
+    Logger.info(`Select orders -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
+    res.status(200).json({ result });
+  } catch (err) {
+    Logger.error(
+      `Select orders -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: ${JSON.stringify(err)}`,
+    );
+    let errorPayload = err;
+    if (err instanceof Error) errorPayload = { name: err.name, message: err.message };
+    next(errorPayload);
+  }
+};
+
+const selectMyOrders = async (
+  req: Request<NonNullable<unknown>, NonNullable<unknown>, NonNullable<unknown>, QueryOrders>,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    Logger.info(`Select orders -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
+    const { sort, offset } = req.query;
+    const { user_id } = req.user;
+    const result = await orderApi.selectOrders({ user_id: user_id ?? '', sort, offset }, 'and');
     Logger.info(`Select orders -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ result });
   } catch (err) {
@@ -170,4 +196,4 @@ const selectOrderById = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
-export { createOrder, updateOrder, selectOrders, selectOrderById, getTracking, updateOrderWebhook };
+export { createOrder, updateOrder, selectOrders, selectOrderById, getTracking, updateOrderWebhook, selectMyOrders };

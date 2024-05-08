@@ -41,7 +41,7 @@ const updateBanner = async (req: Request, res: Response, next: NextFunction) => 
     if (req.file) {
       updateBanner.image_url = API_URL + req.file.path.split('uploads')[1];
     }
-    const result = await bannerApi.updateBanner({ ...req.body, id: req.params.id });
+    const result = await bannerApi.updateBanner({ ...updateBanner, id: req.params.id });
     Logger.info(`Update Banner -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ result: { status: result.affectedRows } });
   } catch (err) {

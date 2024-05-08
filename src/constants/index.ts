@@ -15,11 +15,13 @@ export const ERROR_MESSAGE = {
 
 export const ERROR_NAME = {
   BAD_REQUEST: 'BadRequestError',
-  UNAUTHORIZED: 'unauthorized',
+  DB_ERROR: 'DatabaseError',
+  UNAUTHORIZED: 'Unauthorized',
   ACCESS_DENIED: 'noAccess',
   NOT_FOUND: 'NotFoundError',
   EXP_ERROR: 'TokenExpiredError',
   DEFAULT_ERROR: 'Error',
   INVALID_TOKEN: 'JsonWebTokenError',
   RESET_PASSWORD: 'ResetPassword',
+  VERIFICATION_EMAIL: 'VerificationEmail',
 };

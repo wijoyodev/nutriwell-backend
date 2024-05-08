@@ -1,9 +1,8 @@
 import { execute, query } from '.';
 import { UserAdmin } from '../types';
 
-export const createUser = async (payload: { [key: string]: string }) => {
-  const { referrer_code } = payload;
-  if (referrer_code) {
+export const createUser = async (keyToAdd: string[], valueToAdd: (string | number)[], referrerExists = true) => {
+  if (referrerExists) {
     await query(`CREATE TRIGGER IF NOT EXISTS add_network AFTER INSERT on users
     FOR EACH ROW
     BEGIN
@@ -11,14 +10,7 @@ export const createUser = async (payload: { [key: string]: string }) => {
       VALUES(NEW.id,(SELECT id FROM users WHERE referral_code = NEW.referrer_code),'1');
     END;`);
   }
-  const keyToAdd = [];
-  const valueToAdd = [];
-  for (const key in payload) {
-    if (payload[key]) {
-      keyToAdd.push(key);
-      valueToAdd.push(payload[key]);
-    }
-  }
+
   return await execute(
     `INSERT INTO users(${keyToAdd.join(',')})
     VALUES(${keyToAdd.map(() => '?').join(',')});
@@ -28,12 +20,12 @@ export const createUser = async (payload: { [key: string]: string }) => {
 };
 
 export const createAdmin = async (payload: UserAdmin) => {
-  const { full_name, email, password, code, status = '1', role = 4 } = payload;
+  const { full_name, email, password, status = 1, role = 3 } = payload;
   await query(`DROP TRIGGER IF EXISTS add_network;`);
   return await execute(
-    `INSERT INTO users(code,role,full_name,email,password,status) 
-      VALUES(?,?,?,?,?,?);`,
-    [code, role, full_name, email, password, status],
+    `INSERT INTO users(role,full_name,email,password,status) 
+      VALUES(?,?,?,?,?);`,
+    [role, full_name, email, password, status],
   );
 };
 
@@ -41,40 +33,56 @@ export const getUserMaxValue = async () => {
   return await execute(`SELECT COUNT(id) AS total FROM users`);
 };
 
-export const findUserByValue = async (value: string[] | number[], keyAnd: string[], keyOr: string[] = []) => {
-  let orQueries = '';
-  let andQueries = '';
-  let queries = '';
-  if (keyOr.length > 0) {
-    const orMapKey = keyOr.map((item) => `${item} = ?`);
-    orQueries += `(${orMapKey.join(' OR ')})`;
-    queries = 'WHERE ' + orQueries;
-  }
-
-  if (keyAnd.length > 0) {
-    const andMapKey = keyAnd.map((item) => `${item} = ?`);
-    andQueries += `(${andMapKey.join(' AND ')})`;
-    queries = 'WHERE ' + andQueries;
-  }
-
-  if (orQueries && andQueries) queries = `WHERE ${andQueries} AND ${orQueries}`;
-  return await execute(`SELECT * FROM users ${queries};`, value);
-};
-
-export const findUserNetworkList = async (values: string[]) => {
+export const findUserByValue = async (conditionSql: string, conditionValue?: string[], offset = '0', sort = 'DESC') => {
   return await execute(
-    `SELECT s.*,JSON_ARRAYAGG(JSON_MERGE_PRESERVE(JSON_OBJECT('user_id', n.user_id), JSON_OBJECT('code', n.code), JSON_OBJECT('name', n.full_name), JSON_OBJECT('referrer_code',n.referral_code))) AS network_list FROM users s JOIN (
-    SELECT ne.*, se.full_name, se.code, se.referral_code FROM networks ne JOIN users se ON se.id=ne.user_id
-    ) n WHERE s.id = ${values[0]}`,
+    `SELECT s.id, s.full_name, s.code, s.status, s.email, s.referral_code, s.phone_number, s.gender, s.date_of_birth, s.account_bank,
+    s.account_bank_name, s.account_bank_number, s.avatar_url, s.role, s.referrer_code 
+    FROM users s ${conditionSql} ORDER BY s.created_at ${sort} LIMIT 10 OFFSET ${offset};`,
+    conditionValue,
   );
 };
 
-export const findSelf = async (userId: string) => {
-  return await query(`
-    SELECT s.id, s.code, s.role, s.full_name, s.email, s.phone_number, s.avatar_url, s.date_of_birth, s.phone_number_country,
-    s.gender, s.account_bank, s.account_bank_name, s.account_bank_number, s.referral_code, s.referrer_code, s.status, s.created_at, s.updated_at, JSON_ARRAYAGG(JSON_MERGE_PRESERVE(JSON_OBJECT('level', r.level),JSON_OBJECT('total_network', r.total_network))) AS network_list FROM users s JOIN (SELECT n.level, COUNT(n.user_id) total_network FROM networks n GROUP BY n.level) r 
-     WHERE s.id = ${userId};
-  `);
+export const findUserByRefreshToken = async (refreshToken: string) => {
+  return await execute(`SELECT * FROM users WHERE reset_password_token = ?`, [refreshToken]);
+};
+
+export const findUserByEmail = async (user_account: string) => {
+  return await execute(`SELECT * FROM users WHERE email = ? OR phone_number = ?`, [user_account, user_account]);
+};
+
+export const findUserAdmin = async (conditionSql: string, conditionValue?: string[], offset = '0', sort = 'DESC') => {
+  return await execute(
+    `SELECT s.id, s.code, s.full_name, s.email, s.status, ro.name as role_name FROM users s 
+    JOIN roles ro ON ro.id=s.role ${conditionSql} ORDER BY s.created_at ${sort} LIMIT 10 OFFSET ${offset}`,
+    conditionValue,
+  );
+};
+
+export const findUserNetworkList = async (
+  conditionSql: string,
+  conditionValue?: string[],
+  offset = '0',
+  sort = 'DESC',
+) => {
+  return await execute(
+    `
+  SELECT s.id, s.full_name, s.code, s.status, s.referral_code, s.phone_number, s.gender, s.date_of_birth, s.account_bank, s.account_bank_name, s.account_bank_number, s.avatar_url,
+  re.downlines, JSON_OBJECT('full_name', se.full_name, 'code', se.code, 'join_date', se.created_at, 'phone_number', se.phone_number) AS upline, 
+  JSON_OBJECT('address_detail', sh.address_detail, 'recipient_name', sh.recipient_name, 'recipient_phone_number', sh.recipient_phone_number, 
+  'province', sh.province, 'postal_code', sh.postal_code, 'city', sh.city, 'district', sh.district, 'subdistrict', sh.subdistrict) AS address_detail
+  FROM users s LEFT JOIN users se ON se.referral_code=s.referrer_code 
+  LEFT JOIN shipments sh ON sh.user_id=s.id
+  LEFT OUTER JOIN (SELECT COUNT(networks.user_id) as downlines, networks.upline_id FROM networks LEFT JOIN users ON users.id = networks.upline_id 
+  GROUP BY networks.upline_id) re ON re.upline_id = s.id
+  ${conditionSql}
+  ORDER BY s.created_at ${sort} LIMIT 10 OFFSET ${offset};
+  `,
+    conditionValue,
+  );
+};
+
+export const findTotalUser = async (conditionSql: string, conditionValue?: string[]) => {
+  return await execute(`SELECT COUNT(id) AS total_users FROM users s ${conditionSql}`, conditionValue);
 };
 
 export const updateUser = async (key: string[], condition: string[], value: string[] | number[]) => {

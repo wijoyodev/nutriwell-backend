@@ -1,4 +1,5 @@
 import Logger from '../lib/logger';
+import { EMAIL_SERVICE } from '../settings';
 
 export const phoneNumberChecker = (phone: string) => {
   if (phone.startsWith('8')) return `0${phone}`;
@@ -37,8 +38,14 @@ export const statusOrderGenerator = (statusCode: string, source: string) => {
     case 'delivered':
       status = 3;
       break;
+    case 'picking_up':
+    case 'allocated':
+    case 'picked':
+    case 'dropping_off':
+      status = 2;
+      break;
     default:
-      status = source === 'xendit' ? 0 : 2;
+      status = source === 'xendit' ? 0 : 1;
       break;
   }
   return { status, message };
@@ -46,8 +53,10 @@ export const statusOrderGenerator = (statusCode: string, source: string) => {
 
 export const queriesMaker = (
   queriesPayload: { [key: string]: string | number },
-  methodQuery: string,
+  methodQuery = 'and',
   alias?: string,
+  matchKey?: string[],
+  rangePayload?: { [key: string]: string | number },
 ) => {
   const andObject = {};
   const matchObject = {};
@@ -73,7 +82,7 @@ export const queriesMaker = (
       objectQueries[key] = {
         condition: Object.keys(queries[key])
           .filter((item) => item)
-          .map((item) => `${alias + '.'}${item} = ?`),
+          .map((item) => `${alias ? alias + '.' : ''}${item} = ?`),
         value: Object.values(queries[key]).filter((item) => item),
       };
   }
@@ -82,8 +91,8 @@ export const queriesMaker = (
   let orQuery = '';
   const valueArray: string[][] = [];
   for (const [key, object] of Object.entries(objectQueries)) {
-    if (key === 'match') {
-      matchQuery += `(MATCH (title, description) AGAINST (?))`;
+    if (key === 'match' && matchKey) {
+      matchQuery += `(MATCH (${matchKey?.map((item) => `${alias ? alias + '.' : ''}${item}`).join(',')}) AGAINST (?))`;
       valueArray.push(object.value);
     } else if (key === 'and') {
       andQuery += `(${object.condition.join(' AND ')})`;
@@ -99,11 +108,16 @@ export const queriesMaker = (
     queryTemplate = `WHERE ${matchQuery}`;
     if (andQuery) queryTemplate += ` AND ${andQuery}`;
     if (orQuery) queryTemplate += ` AND ${orQuery}`;
+    if (rangePayload) queryTemplate += ` AND ${rangePayload.key} IN (${rangePayload.value})`;
   } else if (andQuery) {
     queryTemplate = `WHERE ${andQuery}`;
     if (orQuery) queryTemplate += ` AND ${orQuery}`;
-  } else if (orQuery) queryTemplate = `WHERE ${orQuery}`;
-  Logger.info(`condition SQL generated for the process: ${queryTemplate}`);
+    if (rangePayload) queryTemplate += ` AND ${rangePayload.key} IN (${rangePayload.value})`;
+  } else if (orQuery) {
+    queryTemplate = `WHERE ${orQuery}`;
+    if (rangePayload) queryTemplate += ` AND ${rangePayload.key} IN (${rangePayload.value})`;
+  } else if (rangePayload) queryTemplate += `WHERE ${rangePayload.key} IN (${rangePayload.value})`;
+  Logger.info(`condition SQL generated for the process: ${JSON.stringify(queryTemplate)}`);
   return { queryTemplate, queryValue };
 };
 
@@ -116,4 +130,14 @@ export const apiCall = async <T>(
   const result = (await res.json()) as T;
   Logger.info(`API call to ${api_url}: finish`);
   return result;
+};
+
+export const emailPayloadGenerator = (template_id: string, bodyEmail: { [key: string]: string }) => {
+  return {
+    service_id: EMAIL_SERVICE.SERVICE_ID,
+    template_id,
+    user_id: EMAIL_SERVICE.USER_ID,
+    accessToken: EMAIL_SERVICE.ACCESS_TOKEN,
+    template_params: bodyEmail,
+  };
 };

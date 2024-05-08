@@ -7,7 +7,7 @@ import { apiCall, orderGenerator } from '../../utils';
 import { queriesMaker } from '../../utils';
 
 const createOrder = async (requestPayload: {
-  user_id: number;
+  user_id: string;
   cart_id: number;
   address_shipment_id: number;
   courier_type: string;
@@ -16,6 +16,7 @@ const createOrder = async (requestPayload: {
   courier_service_name: string;
   courier_rate: number;
   total_purchase: number;
+  shipment_duration_range: string;
 }) => {
   const {
     user_id,
@@ -27,6 +28,7 @@ const createOrder = async (requestPayload: {
     total_purchase,
     courier_company,
     courier_type,
+    shipment_duration_range,
   } = requestPayload;
   const dataPayload: OrderPayload = {
     user_id,
@@ -43,11 +45,19 @@ const createOrder = async (requestPayload: {
     status: 0,
   };
 
+  const rangeDelivery = shipment_duration_range.split(' - ');
+  dataPayload.courier_max_time =
+    rangeDelivery.length > 1
+      ? Number(rangeDelivery[rangeDelivery.length - 1])
+      : rangeDelivery.length > 0
+        ? Number(rangeDelivery[0])
+        : 0;
+
   // get address detail and product detail
   const [orderDetails] = await orderService.selectOrderDetails([dataPayload.cart_id, dataPayload.address_shipment_id]);
   if (Array.isArray(orderDetails) && orderDetails.length > 0) {
     const { user_detail } = orderDetails[0];
-
+    // payment payload to xendit
     const paymentPayload = {
       external_id: dataPayload.order_number,
       amount: dataPayload.total_purchase,
@@ -74,6 +84,7 @@ const createOrder = async (requestPayload: {
     const transactionResult = await apiCall<{
       status: string;
       invoice_url: string;
+      expiry_date: string;
       errors?: { [key: string]: string }[];
       message?: string;
     }>(`${XENDIT_URL}/v2/invoices`, {
@@ -84,10 +95,12 @@ const createOrder = async (requestPayload: {
     if (transactionResult.errors) {
       throw { name: ERROR_NAME.BAD_REQUEST, message: transactionResult.message };
     }
-    const { invoice_url } = transactionResult;
+    const { invoice_url, expiry_date } = transactionResult;
+    // add result from xendit to DB
+    dataPayload.payment_url = invoice_url;
+    dataPayload.payment_expiry_date = new Date(expiry_date).toLocaleString('sv-SE');
     const arrPayload = Object.values(dataPayload);
     const updateKeys = Object.keys(dataPayload).join(',');
-
     // save order in DB
     const [result] = await orderService.createOrder(updateKeys, arrPayload);
     if (result.affectedRows === 0) Logger.error(`Order creation failed: No affected row when creating one.`);
@@ -97,9 +110,11 @@ const createOrder = async (requestPayload: {
 
 const updateOrder = async (requestPayload: { [key: string]: string | number }, idToUpdate = 'id') => {
   const { id, ...rest } = requestPayload;
+  // format date based on DB format
   if (rest.payment_date) rest.payment_date = new Date(rest.payment_date).toLocaleString('sv-SE');
   if (rest.delivery_date) rest.delivery_date = new Date(rest.delivery_date).toLocaleString('sv-SE');
   if (rest.receive_date) rest.receive_date = new Date(rest.receive_date).toLocaleString('sv-SE');
+  // if null, payload field will be deleted
   Object.keys(rest).forEach((field) => !rest[field] && delete rest[field]);
   const keys = Object.keys(rest).map((item) => `${item} = ?`);
   const values = Object.values(rest).filter((item) => item);
@@ -107,13 +122,31 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
     keys,
     values,
   };
+  // if there is to update, update to biteship and DB
   if (keys.length > 0) {
     const keyId = idToUpdate;
-    // check whether order is not created yet in Biteship and create an order
-    if (rest.status === 1) {
-      const [resultOrderDetail] = await orderService.selectOrderById([String(id)], keyId);
-      if (Array.isArray(resultOrderDetail)) {
-        const { courier_company, order_number, courier_type, user_detail, product_detail } = resultOrderDetail[0];
+
+    const [resultOrderDetail] = await orderService.selectOrderById([String(id)], keyId);
+    if (Array.isArray(resultOrderDetail)) {
+      const {
+        courier_company,
+        order_number,
+        courier_type,
+        user_detail,
+        product_detail,
+        courier_max_time,
+        estimated_delivery_date,
+      } = resultOrderDetail[0];
+      // update the estimation delivery when status become 2 for the first time
+      if (rest.status === 2 && !estimated_delivery_date) {
+        const estimatedDeliveryTime = new Date(
+          new Date().setDate(new Date().getDate() + courier_max_time),
+        ).toLocaleString('sv-SE');
+        dataPayload.keys.push('estimated_delivery_date = ?');
+        dataPayload.values.push(estimatedDeliveryTime);
+      }
+      // check whether order is not created yet in Biteship and create an order
+      if (rest.status === 1) {
         const orderBiteshipPayload = {
           shipper_contact_name: 'Nutriwell Admin',
           shipper_contact_phone: '087877072828',
@@ -149,13 +182,10 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
             headers: new Headers(BITESHIP_HEADER),
           },
         );
+        // add payload of external id of biteship id
         if (orderSentResult.success) {
           dataPayload.keys.push('external_id = ?');
           dataPayload.values.push(orderSentResult.id);
-          const checkIndex = dataPayload.keys.indexOf('status = ?');
-          if (checkIndex !== -1) {
-            dataPayload.values[checkIndex] = 2;
-          }
         } else Logger.error({ name: ERROR_NAME.BAD_REQUEST, message: orderSentResult.error });
       }
     }
@@ -169,17 +199,45 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
 };
 
 const selectOrders = async (requestPayload: QueryOrders, methodQuery: string = 'and') => {
-  const { queryTemplate, queryValue } = queriesMaker(requestPayload, methodQuery, 'orders');
-  const [result] = await orderService.selectOrders(queryTemplate, queryValue);
-  return result;
-  return [];
+  const { sort, offset, ...rest } = requestPayload;
+  const { queryTemplate, queryValue } = queriesMaker(rest, methodQuery, 'orders');
+  const [result] = await orderService.selectOrders(queryTemplate, queryValue, sort, offset);
+  let totalOrders = 0;
+  if (Array.isArray(result) && result.length > 0) {
+    result.map((item) => {
+      item.product_detail.product_image = JSON.parse(item.product_detail.product_image);
+      item.courier_rate = parseFloat(item.courier_rate);
+      item.total_purchase = parseFloat(item.total_purchase);
+    });
+    const [resultTotalOrders] = await orderService.findTotalOrders(queryTemplate, queryValue);
+    if (Array.isArray(resultTotalOrders) && resultTotalOrders.length > 0) {
+      const { total_orders } = resultTotalOrders[0];
+      totalOrders = total_orders;
+    }
+    return {
+      data: result,
+      offset: Number(offset) || 0,
+      limit: 10,
+      total: totalOrders,
+    };
+  }
+  return {
+    data: [],
+    offset: Number(offset) || 0,
+    limit: 10,
+    total: 0,
+  };
 };
 
 const selectOrderById = async (requestPayload: string) => {
   const id = requestPayload;
   const [result] = await orderService.selectOrderById([id]);
-  return result;
-  return [];
+  if (Array.isArray(result) && result.length > 0) {
+    result[0].product_detail.product_image = JSON.parse(result[0].product_detail.product_image);
+    result[0].courier_rate = parseFloat(result[0].courier_rate);
+    result[0].total_purchase = parseFloat(result[0].total_purchase);
+    return result;
+  } else return [];
 };
 
 const getTracking = async (requestPayload: string) => {

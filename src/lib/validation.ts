@@ -70,19 +70,9 @@ export const registerAdminSchema = checkSchema({
       errorMessage: FIELD_EMPTY,
     },
   },
-  status: {
-    notEmpty: {
-      errorMessage: FIELD_EMPTY,
-    },
-  },
 });
 
 export const refreshTokenSchema = checkSchema({
-  user: {
-    notEmpty: {
-      errorMessage: FIELD_EMPTY,
-    },
-  },
   token: {
     notEmpty: {
       errorMessage: FIELD_EMPTY,
@@ -96,11 +86,10 @@ export const refreshTokenSchema = checkSchema({
 });
 
 export const loginSchema = checkSchema({
-  email: {
+  user_account: {
     notEmpty: {
       errorMessage: FIELD_EMPTY,
     },
-    isEmail: true,
   },
   password: {
     notEmpty: {
@@ -220,11 +209,6 @@ export const cartSchema = checkSchema({
 });
 
 export const orderSchema = checkSchema({
-  user_id: {
-    notEmpty: {
-      errorMessage: FIELD_EMPTY,
-    },
-  },
   address_shipment_id: {
     notEmpty: {
       errorMessage: FIELD_EMPTY,
