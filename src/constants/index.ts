@@ -1,4 +1,3 @@
-export const DOMAIN = 'https://vocal-condor-slowly.ngrok-free.app' || 'http://localhost:3002';
 export const FIELD_EMPTY = "the field can't be empty.";
 export const CONFIRM_PASSWORD_ERROR = 'confirm password must be the same as the password.';
 export const PASSWORD_ERROR = 'the length must be 6 digit.';
@@ -16,11 +15,13 @@ export const ERROR_MESSAGE = {
 
 export const ERROR_NAME = {
   BAD_REQUEST: 'BadRequestError',
-  UNAUTHORIZED: 'unauthorized',
+  DB_ERROR: 'DatabaseError',
+  UNAUTHORIZED: 'Unauthorized',
   ACCESS_DENIED: 'noAccess',
   NOT_FOUND: 'NotFoundError',
   EXP_ERROR: 'TokenExpiredError',
   DEFAULT_ERROR: 'Error',
   INVALID_TOKEN: 'JsonWebTokenError',
   RESET_PASSWORD: 'ResetPassword',
+  VERIFICATION_EMAIL: 'VerificationEmail',
 };

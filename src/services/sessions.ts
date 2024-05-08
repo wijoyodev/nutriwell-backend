@@ -14,6 +14,10 @@ export const deleteSession = async (user_id: number, refresh_token: string) => {
   return await execute(`DELETE FROM sessions WHERE user_id = ? AND refresh_token = ?;`, [user_id, refresh_token]);
 };
 
+export const bulkDeleteSession = async () => {
+  return await execute(`DELETE FROM sessions WHERE DATEDIFF(NOW(), created_at) > 30;`);
+};
+
 export const updateSession = async (access_token: string, refresh_token: string) => {
   return await execute(
     `

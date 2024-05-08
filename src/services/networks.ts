@@ -1,64 +1,52 @@
 import { execute, query } from '.';
 
-export const findNetworkByValue = async (
-  value: string[] | number[],
-  keyAnd: string[],
-  sort = 'DESC',
-  offset = '0',
-  keyOr: string[] = [],
-) => {
-  let orQueries = '';
-  let andQueries = '';
-  let queries = '';
-  if (keyOr.length > 0) {
-    const orMapKey = keyOr.map((item) => `${item} = ?`);
-    orQueries += `(${orMapKey.map((item) => `n.${item}`).join(' OR ')})`;
-    queries = 'WHERE ' + orQueries;
-  }
-
-  if (keyAnd.length > 0) {
-    const andMapKey = keyAnd.map((item) => `${item} = ?`);
-    andQueries += `(${andMapKey.map((item) => `n.${item}`).join(' AND ')})`;
-    queries = 'WHERE ' + andQueries;
-  }
-
-  if (orQueries && andQueries) queries = `WHERE ${andQueries} AND ${orQueries}`;
+export const findNetworkByValue = async (value: (string | number)[], queries: string, sort = 'DESC', offset = '0') => {
   return await execute(
-    `SELECT n.*, s.full_name, s.avatar_url, s.referrer_code, s.referral_code, s.email, s.phone_number FROM networks n JOIN users s ON s.id=n.user_id ${queries} ORDER BY n.level DESC, n.created_at ${sort} LIMIT 10 OFFSET ${offset};`,
+    `SELECT n.*, s.full_name, s.avatar_url, s.referrer_code, s.referral_code, s.email, s.phone_number, sh.province, re.downlines, 
+    JSON_OBJECT('full_name', se.full_name, 'code', se.code, 'join_date', se.created_at, 'phone_number', se.phone_number) AS upline,
+    sh.province
+    FROM networks n 
+    JOIN users s ON s.id=n.user_id 
+    LEFT JOIN users se ON se.referral_code=s.referrer_code 
+    LEFT OUTER JOIN (SELECT COUNT(networks.user_id) as downlines, networks.upline_id FROM networks LEFT JOIN users ON users.id = networks.upline_id GROUP BY networks.upline_id) re ON re.upline_id = n.user_id
+    LEFT JOIN shipments sh ON sh.user_id=n.user_id ${queries} ORDER BY n.level DESC, n.created_at ${sort} LIMIT 10 OFFSET ${offset};`,
     value,
   );
 };
 
 export const findNetworkByCode = async (code: string) => {
-  return await execute(
+  return await execute<{ id: number }>(
     `
       SELECT s.id FROM users s WHERE s.referral_code = '${code}'
     `,
   );
 };
 
-export const totalNetworkByValue = async (
-  value: string[] | number[] = [],
-  keyAnd: string[] = [],
-  keyOr: string[] = [],
-) => {
-  let orQueries = '';
-  let andQueries = '';
-  let queries = '';
-  if (keyOr.length > 0) {
-    const orMapKey = keyOr.map((item) => `${item} = ?`);
-    orQueries += `(${orMapKey.join(' OR ')})`;
-    queries = 'WHERE ' + orQueries;
-  }
+export const findNetworkDetail = async (value: string[] = []) => {
+  return await execute(
+    `SELECT n.level, s.created_at, n.user_id, s.avatar_url, s.full_name FROM networks n 
+    JOIN users s ON s.id = n.user_id
+    WHERE n.user_id= ?
+  `,
+    value,
+  );
+};
 
-  if (keyAnd.length > 0) {
-    const andMapKey = keyAnd.map((item) => `${item} = ?`);
-    andQueries += `(${andMapKey.join(' AND ')})`;
-    queries = 'WHERE ' + andQueries;
-  }
+export const findMyNetwork = async (value: string[] = []) => {
+  return await execute(
+    `SELECT n.level, s.full_name, s.avatar_url, re.downlines FROM networks n 
+    JOIN users s ON s.id = n.user_id
+    LEFT OUTER JOIN 
+    (SELECT COUNT(networks.user_id) as downlines, networks.upline_id FROM networks LEFT JOIN users ON users.id = networks.upline_id GROUP BY networks.upline_id) re
+    ON re.upline_id = n.user_id
+    WHERE n.upline_id= ? ORDER BY n.level DESC
+  `,
+    value,
+  );
+};
 
-  if (orQueries && andQueries) queries = `WHERE ${andQueries} AND ${orQueries}`;
-  return await execute(`SELECT COUNT(id) AS total_network FROM networks ${queries}`, value);
+export const totalNetworkByValue = async (value: string[] | number[] = [], queries = '') => {
+  return await execute(`SELECT COUNT(n.id) AS total_network FROM networks n ${queries} `, value);
 };
 
 export const updateNetworkLevel = async (userId: string) => {
@@ -73,4 +61,15 @@ export const updateNetworkLevel = async (userId: string) => {
   END
   WHERE n.user_id = ${userId} AND r.upline_id = ${userId};
   `);
+};
+
+export const networkOrderStat = async (value: string[]) => {
+  return await execute(
+    `
+  SELECT ne.level, x.transactions, COUNT(ne.id) as total_network FROM networks ne JOIN users se ON se.id=ne.user_id JOIN
+  (SELECT COUNT(n.id) as transactions, one.level FROM networks one LEFT JOIN orders_networks n ON n.network_user_id = one.user_id GROUP BY one.level) x ON x.level=ne.level 
+  ${value.length > 0 ? `WHERE ne.upline_id = ?` : ''} GROUP BY ne.level ORDER BY ne.level DESC;
+  `,
+    value,
+  );
 };
