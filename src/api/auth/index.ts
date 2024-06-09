@@ -9,6 +9,7 @@ import { findUserByEmail, findUserByRefreshToken, findUserByValue, updateUser } 
 import { emailPayloadGenerator, queriesMaker } from '../../utils';
 import { EMAIL_SERVICE } from '../../settings';
 import { findNetworkByCode } from '../../services/networks';
+import * as verificationService from '../../services/verifications';
 
 export const signToken = (payload: tokenPayload, user = '', newRefreshToken = true) => {
   const privateKey = fs.readFileSync(path.join(__dirname.split('Documents')[0], '.ssh/rs256_nutriwell'), 'utf8');
@@ -70,6 +71,7 @@ export const refreshToken = async (tokenData: {
         avatar_url?: string;
         phone_number_country?: string;
         referral_code?: string;
+        role?: number;
       } = {
         token: newAccessToken.token,
         refresh_token,
@@ -86,6 +88,7 @@ export const refreshToken = async (tokenData: {
           avatar_url,
           phone_number_country,
           referral_code,
+          role,
         } = resultUser[0];
         bodyResponse.phone_number = phone_number;
         bodyResponse.gender = gender;
@@ -96,6 +99,7 @@ export const refreshToken = async (tokenData: {
         bodyResponse.user_id = id;
         bodyResponse.phone_number_country = phone_number_country;
         bodyResponse.referral_code = referral_code;
+        bodyResponse.role = role;
       }
       // update session
       const [result] = await updateSession(newAccessToken.token, refresh_token);
@@ -142,6 +146,7 @@ export const login = async (user_account: string, password: string) => {
           avatar_url,
           phone_number_country,
           referral_code,
+          role,
           ...tokenUser,
         };
       } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not create session for the user in DB' };
@@ -191,8 +196,8 @@ export const resetPassword = async (email: string) => {
         template_params: {
           from_name: 'Nutriwell',
           to_name: full_name,
-          reset_link: `http://localhost:3001/reset-password/${resetToken}`,
-          email_recipient: 'mayanafitri25@gmail.com',
+          reset_link: `https://suitable-evidently-caribou.ngrok-free.app/reset-password/${resetToken}`,
+          email_recipient: email,
         },
       };
       const result = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -227,19 +232,18 @@ export const resetPasswordVerification = async (resetToken: string) => {
 export const verificationEmail = async (payload: { email: string; referrer_code?: string | null }) => {
   const { email, referrer_code } = payload;
   // check whether user exists
-  const { queryTemplate, queryValue } = queriesMaker({ email });
+  const { queryTemplate, queryValue } = queriesMaker({ email }, 'and', 's');
   const [usersFound] = await findUserByValue(queryTemplate, queryValue);
   if (Array.isArray(usersFound) && usersFound.length < 1) {
     // find if referrer exists if any
     let referrer_id;
     if (referrer_code) {
-      const referrerExist = await findNetworkByCode(referrer_code);
+      const [referrerExist] = await findNetworkByCode(referrer_code);
       if (Array.isArray(referrerExist)) {
         if (referrerExist.length < 1)
           throw { name: ERROR_NAME.NOT_FOUND, message: 'Could not find the referrer code on database.' };
         else {
-          const { id } = referrerExist[0];
-          referrer_id = id;
+          referrer_id = referrerExist[0].id;
         }
       } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Failed to check referrer code.' };
     }
@@ -248,28 +252,55 @@ export const verificationEmail = async (payload: { email: string; referrer_code?
     const payloadToken = `expiryDate=${expireDate.toJSON()}&email=${email}&referrer_code=${referrer_code}&referrer_id=${referrer_id}`;
     // create token
     const verificationToken = btoa(payloadToken);
-    // send email to user for verification email
-    const emailBody = {
-      to_name: email,
-      register_url: `http://localhost:3001/verification-email/${verificationToken}`,
-      email_recipient: 'mayanafitri25@gmail.com',
+    const verificationData = {
+      email,
+      expiry_date: expireDate.toLocaleString('sv-SE'),
+      token: verificationToken,
     };
-    const emailCreds = emailPayloadGenerator(EMAIL_SERVICE.TEMPLATE_VERIFICATION_ID, emailBody);
-    const result = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(emailCreds),
-    });
-    if (result.statusText !== 'OK')
-      throw {
-        name: ERROR_NAME.VERIFICATION_EMAIL,
-        message: `Failed to send verification email: ${result.statusText}`,
+    // create token in database
+    const [resultVerification] = await verificationService.createVerification(
+      Object.keys(verificationData).join(','),
+      Object.values(verificationData),
+    );
+    if (resultVerification.affectedRows) {
+      // send email to user for verification email
+      const emailBody = {
+        to_name: email,
+        register_url: `https://suitable-evidently-caribou.ngrok-free.app/verification-email/${verificationToken}`,
+        email_recipient: email,
       };
-    else
-      return {
-        status: 'OK',
-      };
+      const emailCreds = emailPayloadGenerator(EMAIL_SERVICE.TEMPLATE_VERIFICATION_ID, emailBody);
+      const result = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailCreds),
+      });
+      if (result.statusText !== 'OK')
+        throw {
+          name: ERROR_NAME.VERIFICATION_EMAIL,
+          message: `Failed to send verification email: ${result.statusText}`,
+        };
+      else
+        return {
+          status: 'OK',
+        };
+    }
   } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'already a registered user.' };
+};
+
+export const verifyEmail = async (payload: { email: string; token: string; referrer_code: string }) => {
+  const { email, token, referrer_code } = payload;
+  const { queryTemplate, queryValue } = queriesMaker({ email, token });
+  const [resultFind] = await verificationService.getVerifications(queryTemplate, queryValue);
+  if (Array.isArray(resultFind)) {
+    const notExpiredToken = resultFind.filter((item) => new Date(item.expiry_date) >= new Date());
+    if (notExpiredToken.length > 0) {
+      return {
+        email,
+        referrer_code,
+      };
+    } else throw { name: ERROR_NAME.EXP_ERROR, message: 'Verification token has expired.' };
+  } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Verification token can not be validated.' };
 };

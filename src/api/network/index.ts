@@ -50,3 +50,71 @@ export const findMyNetwork = async (queryPayload: string) => {
     total_network,
   };
 };
+
+export const findMyNetworkStatus = async (queryPayload: { id: string }) => {
+  const { id } = queryPayload;
+  const levelData: {
+    upline_first_id?: string;
+    upline_second_id?: string;
+    upline_third_id?: string;
+    upline_fourth_id?: string;
+    upline_fifth_id?: string;
+  } = {
+    upline_first_id: id,
+    upline_second_id: id,
+    upline_third_id: id,
+    upline_fourth_id: id,
+    upline_fifth_id: id,
+  };
+  const [result] = await networkService.findTotalDownlinePerNetwork([String(id)]);
+  const { queryTemplate, queryValue } = queriesMaker(levelData, 'or', 'nd');
+  const [resultTotal] = await networkService.findNetworkTotalById(queryTemplate, queryValue);
+  if (Array.isArray(result) && Array.isArray(resultTotal)) {
+    result.map((item) => {
+      item.sum_transaction = parseFloat(item.sum_transaction);
+    });
+    return {
+      totalStat: result,
+      totalNetwork: resultTotal,
+    };
+  }
+  return {};
+};
+
+export const findNetworks = async (queryPayload: { user_id: string; offset: string; level?: string }) => {
+  const { user_id, offset, level } = queryPayload;
+  let levelQueries = `nd.upline_first_id = ${user_id} OR nd.upline_second_id = ${user_id} OR nd.upline_third_id = ${user_id} OR nd.upline_fourth_id = ${user_id} OR nd.upline_fifth_id = ${user_id}`;
+  if (level) {
+    switch (level) {
+      case '1':
+        levelQueries = `nd.upline_first_id = ${user_id}`;
+        break;
+      case '2':
+        levelQueries = `nd.upline_second_id = ${user_id}`;
+        break;
+      case '3':
+        levelQueries = `nd.upline_third_id = ${user_id}`;
+        break;
+      case '4':
+        levelQueries = `nd.upline_fourth_id = ${user_id}`;
+        break;
+      case '5':
+        levelQueries = `nd.upline_fifth_id = ${user_id}`;
+        break;
+      default:
+        break;
+    }
+  }
+
+  const [result] = await networkService.listNetworks(user_id, levelQueries, offset);
+  const [resultTotal] = await networkService.findNetworkTotalById(`WHERE ${levelQueries}`, []);
+  if (Array.isArray(result) && Array.isArray(resultTotal)) {
+    return {
+      data: result.flat(),
+      offset: Number(offset) ?? 0,
+      limit: 10,
+      ...resultTotal[0],
+    };
+  }
+  return [];
+};

@@ -6,7 +6,7 @@ import { ERROR_NAME } from '../../constants';
 import { validationResult } from 'express-validator';
 const createCart = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    Logger.info(`Upsert Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
+    Logger.info(`Insert Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
     const validation = validationResult(req);
     if (!validation.isEmpty()) {
       throw { name: ERROR_NAME.BAD_REQUEST, message: validation.array() };
@@ -18,11 +18,33 @@ const createCart = async (req: Request, res: Response, next: NextFunction) => {
       quantity: req.body.quantity,
     };
     const result = await cartApi.createCart(createPayload);
-    Logger.info(`Upsert Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
+    Logger.info(`Insert Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(201).json({ result: { status: result.affectedRows } });
   } catch (err) {
     Logger.error(
-      `Upsert Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: ${JSON.stringify(err)}`,
+      `Insert Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: ${JSON.stringify(err)}`,
+    );
+    let errorPayload = err;
+    if (err instanceof Error) errorPayload = { name: err.name, message: err.message };
+    next(errorPayload);
+  }
+};
+
+const updateQuantityCart = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    Logger.info(`Update Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
+    const validation = validationResult(req);
+    if (!validation.isEmpty()) {
+      throw { name: ERROR_NAME.BAD_REQUEST, message: validation.array() };
+    }
+    const { id } = req.params;
+    const { quantity, price, weight } = req.body;
+    const result = await cartApi.updateQuantityCart({ quantity, price, weight }, id);
+    Logger.info(`Update Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
+    res.status(200).json({ result: { status: result.affectedRows } });
+  } catch (err) {
+    Logger.error(
+      `Update Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: ${JSON.stringify(err)}`,
     );
     let errorPayload = err;
     if (err instanceof Error) errorPayload = { name: err.name, message: err.message };
@@ -37,9 +59,9 @@ const selectCart = async (
 ) => {
   try {
     Logger.info(`Select Product -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
-    const { id, user_id, search } = req.query;
+    const { id, search, status_cart = 1 } = req.query;
     const { user_id: user_id_mid } = req.user;
-    const result = await cartApi.selectCart({ id, user_id: user_id ?? user_id_mid, search }, 'and');
+    const result = await cartApi.selectCart({ id, user_id: user_id_mid ?? '', search, status_cart }, 'and');
     Logger.info(`Select Product -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ result });
   } catch (err) {
@@ -68,4 +90,4 @@ const deleteCart = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export { createCart, selectCart, deleteCart };
+export { createCart, selectCart, deleteCart, updateQuantityCart };

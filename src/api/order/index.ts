@@ -1,10 +1,13 @@
 import { ERROR_NAME } from '../../constants';
 import Logger from '../../lib/logger';
 import * as orderService from '../../services/orders';
+import * as cartService from '../../services/carts';
+import * as networkService from '../../services/networks';
 import { API_URL, BITESHIP_HEADER, BITESHIP_URL, XENDIT_HEADER, XENDIT_URL } from '../../settings';
 import { OrderPayload, QueryOrders } from '../../types';
-import { apiCall, orderGenerator } from '../../utils';
+import { apiCall, orderGenerator, rewardComission } from '../../utils';
 import { queriesMaker } from '../../utils';
+import { createReward } from '../../services/rewards';
 
 const createOrder = async (requestPayload: {
   user_id: string;
@@ -45,7 +48,7 @@ const createOrder = async (requestPayload: {
     status: 0,
   };
 
-  const rangeDelivery = shipment_duration_range.split(' - ');
+  const rangeDelivery = shipment_duration_range ? shipment_duration_range.split(' - ') : [];
   dataPayload.courier_max_time =
     rangeDelivery.length > 1
       ? Number(rangeDelivery[rangeDelivery.length - 1])
@@ -103,6 +106,8 @@ const createOrder = async (requestPayload: {
     const updateKeys = Object.keys(dataPayload).join(',');
     // save order in DB
     const [result] = await orderService.createOrder(updateKeys, arrPayload);
+    // update certain cart to be non active in product page
+    await cartService.updateStatusCart([0, cart_id]);
     if (result.affectedRows === 0) Logger.error(`Order creation failed: No affected row when creating one.`);
     return { affectedRows: result.affectedRows, invoice_url };
   }
@@ -129,6 +134,7 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
     const [resultOrderDetail] = await orderService.selectOrderById([String(id)], keyId);
     if (Array.isArray(resultOrderDetail)) {
       const {
+        user_id,
         courier_company,
         order_number,
         courier_type,
@@ -137,6 +143,8 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
         courier_max_time,
         estimated_delivery_date,
       } = resultOrderDetail[0];
+      const { total_price } = product_detail;
+      const { full_name } = user_detail;
       // update the estimation delivery when status become 2 for the first time
       if (rest.status === 2 && !estimated_delivery_date) {
         const estimatedDeliveryTime = new Date(
@@ -188,10 +196,32 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
           dataPayload.values.push(orderSentResult.id);
         } else Logger.error({ name: ERROR_NAME.BAD_REQUEST, message: orderSentResult.error });
       }
+      // insert rewards for upline when downline has finished order
+      if (rest.status === 3) {
+        await networkService.updateHasTransaction(['1', user_id]);
+        const [resultNetwork] = await networkService.findNetworkById([user_id]);
+        if (Array.isArray(resultNetwork) && resultNetwork.length > 0) {
+          await Promise.all(
+            ['first', 'second', 'third', 'fourth', 'fifth'].filter(
+              (item, index) =>
+                resultNetwork[0][`upline_${item}_id`] &&
+                createReward(
+                  'user_id,reward_profit,description',
+                  [
+                    resultNetwork[0][`upline_${item}_id`],
+                    rewardComission(total_price, item),
+                    `Pembelian Produk dari ${full_name} (level ${index + 1})`,
+                  ],
+                  rewardComission(total_price, item),
+                ),
+            ),
+          );
+        }
+      }
+      // update the payload from body and biteship response if any
+      const [result] = await orderService.updateOrder(dataPayload, keyId, id);
+      return result;
     }
-    // update the payload from body and biteship response if any
-    const [result] = await orderService.updateOrder(dataPayload, keyId, id);
-    return result;
   }
   return {
     affectedRows: 0,
@@ -200,7 +230,11 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
 
 const selectOrders = async (requestPayload: QueryOrders, methodQuery: string = 'and') => {
   const { sort, offset, ...rest } = requestPayload;
-  const { queryTemplate, queryValue } = queriesMaker(rest, methodQuery, 'orders');
+  const { queryTemplate, queryValue } = queriesMaker(rest, methodQuery, 'orders', [
+    'shipment_number',
+    'external_id',
+    'code',
+  ]);
   const [result] = await orderService.selectOrders(queryTemplate, queryValue, sort, offset);
   let totalOrders = 0;
   if (Array.isArray(result) && result.length > 0) {

@@ -1,3 +1,4 @@
+import { TAX_DISBURSEMENT } from '../constants';
 import Logger from '../lib/logger';
 import { EMAIL_SERVICE } from '../settings';
 
@@ -52,7 +53,7 @@ export const statusOrderGenerator = (statusCode: string, source: string) => {
 };
 
 export const queriesMaker = (
-  queriesPayload: { [key: string]: string | number },
+  queriesPayload: { [key: string]: string | number | undefined },
   methodQuery = 'and',
   alias?: string,
   matchKey?: string[],
@@ -91,7 +92,7 @@ export const queriesMaker = (
   let orQuery = '';
   const valueArray: string[][] = [];
   for (const [key, object] of Object.entries(objectQueries)) {
-    if (key === 'match' && matchKey) {
+    if (key === 'match' && matchKey && matchKey?.length > 0) {
       matchQuery += `(MATCH (${matchKey?.map((item) => `${alias ? alias + '.' : ''}${item}`).join(',')}) AGAINST (?))`;
       valueArray.push(object.value);
     } else if (key === 'and') {
@@ -139,5 +140,53 @@ export const emailPayloadGenerator = (template_id: string, bodyEmail: { [key: st
     user_id: EMAIL_SERVICE.USER_ID,
     accessToken: EMAIL_SERVICE.ACCESS_TOKEN,
     template_params: bodyEmail,
+  };
+};
+
+export const rewardComission = (total_price: number, level: string) => {
+  let totalReward = 0;
+  switch (level) {
+    case 'first':
+      totalReward = total_price * (9 / 100);
+      break;
+    case 'second':
+      totalReward = total_price * (7 / 100);
+      break;
+    case 'third':
+      totalReward = total_price * (5 / 100);
+      break;
+    case 'fourth':
+      totalReward = total_price * (3 / 100);
+      break;
+    case 'fifth':
+      totalReward = total_price * (2 / 100);
+      break;
+    default:
+      break;
+  }
+
+  return totalReward;
+};
+
+export const monthBeforeGenerator = () => {
+  const d = new Date();
+  const month = d.getMonth();
+  const year = d.getFullYear();
+  const date = new Date(year, month, 0).toLocaleString('sv-SE');
+  return date;
+};
+
+export const taxDeducter = (amount: number) => {
+  let taxToDeduct = 0;
+  if (amount > TAX_DISBURSEMENT.under_tax.limit) {
+    const remainingAmount = amount - TAX_DISBURSEMENT.under_tax.limit;
+    taxToDeduct =
+      TAX_DISBURSEMENT.under_tax.limit * TAX_DISBURSEMENT.under_tax.tax +
+      remainingAmount * TAX_DISBURSEMENT.upper_tax.tax;
+  } else taxToDeduct = amount * TAX_DISBURSEMENT.under_tax.tax;
+  const amountToDisburse = amount - taxToDeduct;
+  return {
+    amountToDisburse,
+    taxToDeduct,
   };
 };

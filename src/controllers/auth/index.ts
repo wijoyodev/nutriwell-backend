@@ -117,6 +117,7 @@ const verificationEmail = async (req: Request, res: Response, next: NextFunction
       referrer_code: req.body.referrer_code ?? null,
     };
     const result = await authApi.verificationEmail(payload);
+    Logger.info(`Verification email for register -client ${JSON.stringify(req.client)}- ${req.body.email}: finish`);
     res.status(200).json({ result });
   } catch (err) {
     Logger.error(
@@ -128,4 +129,35 @@ const verificationEmail = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export { refreshTokenUser, loginUser, logoutUser, resetPasswordUser, verificationEmail, resetPasswordVerification };
+const verifyEmail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    Logger.info(`Verify email for register -client ${JSON.stringify(req.client)}- ${req.body.email}: start`);
+    if (!req.params.token) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Token for verify email must be filled.' };
+    const convertPayload = atob(req.params.token);
+    const arrPayload = convertPayload.split('&').map((item) => {
+      const keyVal = item.split('=');
+      return { [keyVal[0]]: keyVal[1] };
+    });
+    const dataPayload = Object.assign({}, ...arrPayload);
+    const result = await authApi.verifyEmail({ ...dataPayload, token: req.params.token });
+    Logger.info(`Verify email for register -client ${JSON.stringify(req.client)}- ${req.body.email}: finish`);
+    res.status(200).json({ result });
+  } catch (err) {
+    Logger.error(
+      `Verifiy email for register -client ${JSON.stringify(req.client)}- ${req.body.email}: ${JSON.stringify(err)}`,
+    );
+    let errorPayload = err;
+    if (err instanceof Error) errorPayload = { name: err.name, message: err.message };
+    next(errorPayload);
+  }
+};
+
+export {
+  refreshTokenUser,
+  loginUser,
+  logoutUser,
+  resetPasswordUser,
+  verificationEmail,
+  resetPasswordVerification,
+  verifyEmail,
+};

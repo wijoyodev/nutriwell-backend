@@ -25,3 +25,14 @@ export const ERROR_NAME = {
   RESET_PASSWORD: 'ResetPassword',
   VERIFICATION_EMAIL: 'VerificationEmail',
 };
+
+export const TAX_DISBURSEMENT = {
+  under_tax: {
+    tax: 0.025,
+    limit: 120000000,
+  },
+  upper_tax: {
+    tax: 0.075,
+    min: 120000001,
+  },
+};

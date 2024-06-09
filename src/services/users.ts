@@ -6,8 +6,15 @@ export const createUser = async (keyToAdd: string[], valueToAdd: (string | numbe
     await query(`CREATE TRIGGER IF NOT EXISTS add_network AFTER INSERT on users
     FOR EACH ROW
     BEGIN
-      INSERT INTO networks (user_id, upline_id, level)
-      VALUES(NEW.id,(SELECT id FROM users WHERE referral_code = NEW.referrer_code),'1');
+      INSERT INTO networks_test (user_id, upline_first_id, upline_second_id, upline_third_id, upline_fourth_id, upline_fifth_id)
+      VALUES(
+        NEW.id,
+        (SELECT id FROM users WHERE referral_code = NEW.referrer_code),
+        (SELECT n.upline_first_id FROM networks_test n JOIN users u ON n.user_id = u.id WHERE u.referral_code = NEW.referrer_code),
+        (SELECT n.upline_second_id FROM networks_test n JOIN users u ON n.user_id = u.id WHERE u.referral_code = NEW.referrer_code),
+        (SELECT n.upline_third_id FROM networks_test n JOIN users u ON n.user_id = u.id WHERE u.referral_code = NEW.referrer_code),
+        (SELECT n.upline_fourth_id FROM networks_test n JOIN users u ON n.user_id = u.id WHERE u.referral_code = NEW.referrer_code)
+      );
     END;`);
   }
 
@@ -35,9 +42,29 @@ export const getUserMaxValue = async () => {
 
 export const findUserByValue = async (conditionSql: string, conditionValue?: string[], offset = '0', sort = 'DESC') => {
   return await execute(
-    `SELECT s.id, s.full_name, s.code, s.status, s.email, s.referral_code, s.phone_number, s.gender, s.date_of_birth, s.account_bank,
-    s.account_bank_name, s.account_bank_number, s.avatar_url, s.role, s.referrer_code 
-    FROM users s ${conditionSql} ORDER BY s.created_at ${sort} LIMIT 10 OFFSET ${offset};`,
+    `SELECT s.id, s.full_name, s.code, s.status, s.email, s.referral_code, s.phone_number, s.gender, s.date_of_birth, s.account_bank, s.account_bank_code,
+    s.account_bank_name, s.account_bank_number, s.avatar_url, s.role, s.referrer_code,
+    JSON_OBJECT('avatar_url', se.avatar_url, 'full_name', se.full_name, 'code', se.code, 'join_date', se.created_at, 'phone_number', se.phone_number) AS upline
+    FROM users s 
+    LEFT JOIN users se ON se.referral_code=s.referrer_code
+    ${conditionSql} ORDER BY s.created_at ${sort} LIMIT 10 OFFSET ${offset};`,
+    conditionValue,
+  );
+};
+
+export const findUserWithPassword = async (
+  conditionSql: string,
+  conditionValue?: string[],
+  offset = '0',
+  sort = 'DESC',
+) => {
+  return await execute(
+    `SELECT s.id, s.full_name, s.password, s.code, s.status, s.email, s.referral_code, s.phone_number, s.gender, s.date_of_birth, s.account_bank, s.account_bank_code,
+    s.account_bank_name, s.account_bank_number, s.avatar_url, s.role, s.referrer_code,
+    JSON_OBJECT('avatar_url', se.avatar_url, 'full_name', se.full_name, 'code', se.code, 'join_date', se.created_at, 'phone_number', se.phone_number) AS upline
+    FROM users s 
+    LEFT JOIN users se ON se.referral_code=s.referrer_code
+    ${conditionSql} ORDER BY s.created_at ${sort} LIMIT 10 OFFSET ${offset};`,
     conditionValue,
   );
 };
@@ -66,16 +93,16 @@ export const findUserNetworkList = async (
 ) => {
   return await execute(
     `
-  SELECT s.id, s.full_name, s.code, s.status, s.referral_code, s.phone_number, s.gender, s.date_of_birth, s.account_bank, s.account_bank_name, s.account_bank_number, s.avatar_url,
-  re.downlines, JSON_OBJECT('full_name', se.full_name, 'code', se.code, 'join_date', se.created_at, 'phone_number', se.phone_number) AS upline, 
-  JSON_OBJECT('address_detail', sh.address_detail, 'recipient_name', sh.recipient_name, 'recipient_phone_number', sh.recipient_phone_number, 
-  'province', sh.province, 'postal_code', sh.postal_code, 'city', sh.city, 'district', sh.district, 'subdistrict', sh.subdistrict) AS address_detail
-  FROM users s LEFT JOIN users se ON se.referral_code=s.referrer_code 
-  LEFT JOIN shipments sh ON sh.user_id=s.id
-  LEFT OUTER JOIN (SELECT COUNT(networks.user_id) as downlines, networks.upline_id FROM networks LEFT JOIN users ON users.id = networks.upline_id 
-  GROUP BY networks.upline_id) re ON re.upline_id = s.id
-  ${conditionSql}
-  ORDER BY s.created_at ${sort} LIMIT 10 OFFSET ${offset};
+    SELECT s.id, s.full_name, s.code, s.status, s.referral_code, s.phone_number, s.gender, s.date_of_birth, s.account_bank, s.account_bank_code, s.account_bank_name, s.account_bank_number, s.avatar_url,
+    (SELECT COUNT(nd.id) as total_network FROM networks_test nd WHERE nd.upline_first_id = s.id OR nd.upline_second_id = s.id OR nd.upline_third_id = s.id OR nd.upline_fourth_id = s.id OR nd.upline_fifth_id = s.id) as total_downlines,
+    (SELECT FORMAT(SUM(reward_profit),0) as total_reward FROM rewards WHERE rewards.user_id=s.id) as total_profit,
+    JSON_OBJECT('full_name', se.full_name, 'code', se.code, 'join_date', se.created_at, 'phone_number', se.phone_number) AS upline, 
+    JSON_OBJECT('address_detail', sh.address_detail, 'recipient_name', sh.recipient_name, 'recipient_phone_number', sh.recipient_phone_number, 
+    'province', sh.province, 'postal_code', sh.postal_code, 'city', sh.city, 'district', sh.district, 'subdistrict', sh.subdistrict) AS address_detail
+    FROM users s LEFT JOIN users se ON se.referral_code=s.referrer_code 
+    LEFT JOIN shipments sh ON sh.user_id=s.id
+    ${conditionSql}
+    ORDER BY s.created_at ${sort} LIMIT 10 OFFSET ${offset};
   `,
     conditionValue,
   );
