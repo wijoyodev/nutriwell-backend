@@ -7,12 +7,13 @@ import {
   findUserAdmin,
   findUserByValue,
   findUserNetworkList,
+  findUserWithPassword,
   updateUser,
 } from '../../services/users';
 import { signToken } from '../auth';
 import { ERROR_NAME } from '../../constants';
 import { createSession } from '../../services/sessions';
-import { findNetworkByCode, networkOrderStat, updateNetworkLevel } from '../../services/networks';
+import { networkOrderStat } from '../../services/networks';
 import { queriesMaker } from '../../utils';
 
 export const register = async (data: User) => {
@@ -20,21 +21,19 @@ export const register = async (data: User) => {
   const { queryTemplate, queryValue } = queriesMaker({ phone_number: data.phone_number });
   const [usersFound] = await findUserByValue(queryTemplate, queryValue);
   if (Array.isArray(usersFound) && usersFound.length < 1) {
-    const { password, referrer_id, ...rest } = data;
+    const { password, ...rest } = data;
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     const payload = {
       ...rest,
       password: hashedPassword,
     };
-    Object.keys(data).forEach((field) => !data[field as keyof User] && delete data[field as keyof User]);
+    Object.keys(payload).forEach((field) => !payload[field as keyof User] && delete payload[field as keyof User]);
     const payloadKeys = Object.keys(payload).filter((item) => item !== 'confirm_password');
     const payloadValues = Object.values(payload).filter((item) => item !== payload.confirm_password);
     // create new user in DB
     const [result] = await createUser(payloadKeys, payloadValues);
     if (result && result.affectedRows) {
-      // update network level
-      if (referrer_id) await updateNetworkLevel(referrer_id);
       // create token and refresh token
       const userData = {
         id: String(result.insertId),
@@ -56,6 +55,7 @@ export const register = async (data: User) => {
           avatar_url: payload.avatar_url,
           phone_number_country: payload.phone_number_country,
           referral_code: payload.referral_code,
+          role: payload.role,
           ...tokenUser,
         };
       } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not create session for the user in DB' };
@@ -131,35 +131,20 @@ export const findProfile = async (userId: string) => {
 
 export const update = async (data: { [key: string]: string }, id: string, headerToken?: string | string[]) => {
   Object.keys(data).forEach((field) => field === 'confirm_password' && delete data[field]);
-  // variable for update network level
-  let referrerNewId;
-  let referrerOldId;
   // variable to assign the reset token and expiry date
   let reset_token;
   let reset_expiry;
-  // variable to set referrer code of user to be updated
-  let referrerCode;
+  const { old_password, ...rest } = data;
   // check if user exists and set user existing data to assign variable
-  const { queryTemplate, queryValue } = queriesMaker({ id });
-  const [usersFound] = await findUserByValue(queryTemplate, queryValue);
+  const { queryTemplate, queryValue } = queriesMaker({ id }, 'and', 's');
+  const [usersFound] = await findUserWithPassword(queryTemplate, queryValue);
   if (Array.isArray(usersFound) && usersFound.length > 0) {
-    const { referrer_code, reset_password_token, reset_password_expire } = usersFound[0];
+    const { reset_password_token, reset_password_expire, password: hashedPassword } = usersFound[0];
+    const matchedPassword = await bcrypt.compare(old_password, hashedPassword);
+    if (!matchedPassword) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Old pin does not match.' };
     reset_token = reset_password_token;
     reset_expiry = reset_password_expire;
-    referrerCode = referrer_code;
   } else throw { name: ERROR_NAME.NOT_FOUND, message: 'Could not find the id.' };
-  // to get old and new referral user id to update the level of network
-  if (data.referrer_code) {
-    const [referrerNewExist] = await findNetworkByCode(data.referrer_code);
-    const [referrerOldExist] = await findNetworkByCode(referrerCode);
-    if (Array.isArray(referrerNewExist) && Array.isArray(referrerOldExist)) {
-      if (referrerNewExist.length < 1) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Referrer not found.' };
-      const { id: userNewId } = referrerNewExist[0];
-      const { id: userId } = referrerOldExist[0];
-      referrerNewId = userNewId;
-      referrerOldId = userId;
-    }
-  }
   // if reset password token is there, check whether it's valid or not
   if (headerToken && reset_token && reset_expiry) {
     const currentDate = new Date();
@@ -168,24 +153,18 @@ export const update = async (data: { [key: string]: string }, id: string, header
     } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Token is expired.' };
   }
   // hash updated password
-  if (data.password) data.password = await bcrypt.hash(data.password, 10);
+  if (rest.password) rest.password = await bcrypt.hash(data.password, 10);
   // update user
-  const field = Object.keys(data);
-  const values = Object.values(data);
+  const field = Object.keys(rest);
+  const values = Object.values(rest);
   if (field.length < 1)
     return {
       affectedRows: 0,
     };
   const [result] = await updateUser(field, ['id'], [...values, String(id)]);
-  // update network level position based on update result
   if (result.affectedRows) {
-    if (referrerNewId) await updateNetworkLevel(referrerNewId);
-    if (referrerOldId) await updateNetworkLevel(referrerOldId);
     return {
       status: result.affectedRows,
-      updated_data: {
-        ...data,
-      },
     };
   } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not update user.' };
 };

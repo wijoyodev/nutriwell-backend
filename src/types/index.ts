@@ -115,6 +115,7 @@ export type CartPayload = {
   quantity: number;
   total_weight?: number;
   total_price?: number;
+  status_cart?: number;
 };
 
 export type QueryBase = {
@@ -129,13 +130,26 @@ export type QueryOrders = QueryBase & { user_id?: string; status?: number; sort?
 export type QueryProduct = QueryBase;
 
 export type QueryCart = QueryBase & {
-  user_id: string;
+  user_id?: string;
+  status_cart?: number;
 };
 
 export type QueryUser = QueryBase & {
   role?: string;
   email?: string;
   userType?: string;
+};
+
+export type QueryDisbursement = {
+  id: string;
+  user_id?: string;
+  status?: string;
+  offset?: string;
+};
+
+export type QueryRewards = {
+  user_id?: string;
+  offset?: string;
 };
 
 export type QueryNetwork = { sort: string; offset: string; level?: string; upline_id?: string; user_id?: string };

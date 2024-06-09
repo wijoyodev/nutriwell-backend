@@ -27,8 +27,39 @@ app.use(clientInfo as express.RequestHandler);
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(openApiSpecification));
 
 app.get('/', (req, res) => {
-  Logger.info('test ini log');
   res.send('hello world');
+});
+
+app.get('/logs', (req, res) => {
+  const { from, limit = 100, offset = 0 } = req.query;
+  Logger.query(
+    {
+      from: typeof from === 'string' ? new Date(from) : new Date(),
+      order: 'desc',
+      start: Number(offset),
+      limit: Number(limit),
+      fields: ['message', 'level', 'timestamp'],
+    },
+    (err, result) => {
+      if (err) {
+        res.status(400).send({
+          error: 'Error retrieving logs',
+        });
+      } else {
+        res.send(result);
+      }
+    },
+  );
+});
+
+app.get('/.well-known/assetlinks.json', function (req, res) {
+  console.log(__dirname, 'iniii');
+  res.sendFile(__dirname + '/assetlinks.json');
+});
+
+app.get('/.well-known/apple-app-site-association', function (req, res) {
+  console.log(__dirname, 'iniii');
+  res.sendFile(__dirname + '/apple-app-site-association');
 });
 
 app.use(router);

@@ -7,27 +7,16 @@ import {
   resetPasswordUser,
   verificationEmail,
   resetPasswordVerification,
+  verifyEmail,
 } from '../controllers/auth';
 import { getMe, getProfileById, getUserByValue, registerAdmin, registerUser, updateUser } from '../controllers/user';
 import { createBanner, deleteBanner, selectBanner, updateBanner } from '../controllers/banner';
 import { createProduct, selectProduct, updateProduct } from '../controllers/product';
-import { getMyNetworks, getNetworkDetail, getNetworkList } from '../controllers/network';
-import {
-  bannerSchema,
-  cartSchema,
-  loginSchema,
-  logoutSchema,
-  orderSchema,
-  productSchema,
-  rateSchema,
-  refreshTokenSchema,
-  registerAdminSchema,
-  registerSchema,
-  shipmentSchema,
-} from '../lib/validation';
+import { getMyNetworkStat, getMyNetworks, getNetworkDetail, getNetworkList } from '../controllers/network';
+import * as validation from '../lib/validation';
 import { checkSession, isAdmin } from '../middlewares';
 import { createShipment, selectMyShipment, selectShipment, updateShipment } from '../controllers/shipment';
-import { createCart, deleteCart, selectCart } from '../controllers/cart';
+import { createCart, deleteCart, selectCart, updateQuantityCart } from '../controllers/cart';
 import {
   createOrder,
   getTracking,
@@ -38,6 +27,8 @@ import {
   updateOrderWebhook,
 } from '../controllers/order';
 import { getRates } from '../controllers/courier-rate';
+import { getRewards } from '../controllers/reward';
+import { createDisbursement, getDisbursement, listBank, updateDisbursement } from '../controllers/disbursement';
 
 const router = express.Router();
 const storage = multer.diskStorage({
@@ -49,46 +40,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-/**
- @swagger
- /hello:
- *  get:
- *      summary: to get hello
- *      description: to get spesific hello by body data
- *      requestBody:
- *          required: true
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      properties:
- *                          name:
- *                              type: string
- *                              example: Bambang
- *      responses:
- *          '200':
- *              description: OK
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          properties:
- *                              title:
- *                                  type: string
- *                                  example: Hello this is new path
- *                              name:
- *                                  type: string
- *                                  example: Bambang
- */
-router.get('/hello', (req, res) => {
-  const { name } = req.body;
-  res.status(200).json({
-    title: 'Hello this is new path',
-    name,
-  });
-});
-
 // auth
+router.get('/verification-email/:token', verifyEmail);
 /**
  @swagger
  /verification-email:
@@ -248,7 +201,7 @@ router.post('/verification-email', verificationEmail);
  *                                  type: string
  *                                  example: Error
  */
-router.post('/register', upload.single('avatar'), registerSchema, registerUser);
+router.post('/register', upload.single('avatar'), validation.registerSchema, registerUser);
 /**
  @swagger
  *
@@ -322,7 +275,7 @@ router.post('/register', upload.single('avatar'), registerSchema, registerUser);
  *                                  type: string
  *                                  example: Error
  */
-router.post('/register/admin', checkSession, isAdmin, registerAdminSchema, registerAdmin);
+router.post('/register/admin', checkSession, isAdmin, validation.registerAdminSchema, registerAdmin);
 /**
  @swagger
  /login:
@@ -403,7 +356,7 @@ router.post('/register/admin', checkSession, isAdmin, registerAdminSchema, regis
  *                                  type: string
  *                                  example: Error
  */
-router.post('/login', loginSchema, loginUser);
+router.post('/login', validation.loginSchema, loginUser);
 /**
  @swagger
  /reset-password:
@@ -569,7 +522,7 @@ router.get('/reset-password/:token', resetPasswordVerification);
  *                                  type: string
  *                                  example: Error
  */
-router.post('/logout', logoutSchema, logoutUser);
+router.post('/logout', validation.logoutSchema, logoutUser);
 /**
  @swagger
  /refresh:
@@ -638,7 +591,7 @@ router.post('/logout', logoutSchema, logoutUser);
  *                                  type: string
  *                                  example: Error
  */
-router.post('/refresh', checkSession, refreshTokenSchema, refreshTokenUser);
+router.post('/refresh', checkSession, validation.refreshTokenSchema, refreshTokenUser);
 
 // users
 /**
@@ -768,41 +721,52 @@ router.patch('/user/:id', checkSession, upload.single('avatar'), updateUser);
 
 // networks
 router.get('/network', checkSession, getNetworkList);
+router.get('/network/status', checkSession, getMyNetworkStat);
 router.get('/network/me', checkSession, getMyNetworks);
 router.get('/network/:id', checkSession, getNetworkDetail);
 
 // banners
 router.get('/banner', checkSession, selectBanner);
-router.post('/banner', checkSession, isAdmin, upload.single('banner'), bannerSchema, createBanner);
+router.post('/banner', checkSession, isAdmin, upload.single('banner'), validation.bannerSchema, createBanner);
 router.patch('/banner/:id', checkSession, isAdmin, upload.single('banner'), updateBanner);
 router.delete('/banner/:id', checkSession, isAdmin, deleteBanner);
 
 // products
 router.get('/product', checkSession, selectProduct);
-router.post('/product', checkSession, isAdmin, upload.array('product', 8), productSchema, createProduct);
+router.post('/product', checkSession, isAdmin, upload.array('product', 8), validation.productSchema, createProduct);
 router.patch('/product/:id', checkSession, isAdmin, upload.array('product', 8), updateProduct);
 
 // shipments
 router.get('/address', checkSession, selectShipment);
 router.get('/address/me', checkSession, selectMyShipment);
-router.post('/address', checkSession, shipmentSchema, createShipment);
+router.post('/address', checkSession, validation.shipmentSchema, createShipment);
 router.patch('/address', checkSession, updateShipment);
 
 // cart
 router.get('/cart', checkSession, selectCart);
-router.post('/cart', checkSession, cartSchema, createCart);
+router.post('/cart', checkSession, validation.cartSchema, createCart);
+router.patch('/cart/:id', checkSession, updateQuantityCart);
 router.delete('/cart/:id', checkSession, deleteCart);
 
 // orders
 router.get('/orders', checkSession, selectOrders);
 router.get('/orders/me', checkSession, selectMyOrders);
 router.get('/order/track/:external_id', checkSession, getTracking);
-router.post('/order', checkSession, orderSchema, createOrder);
+router.post('/order', checkSession, validation.orderSchema, createOrder);
 router.post('/order/webhook', updateOrderWebhook);
 router.get('/order/:id', checkSession, selectOrderById);
 router.patch('/order/:id', checkSession, isAdmin, updateOrder);
 
 //biteship
-router.post('/courier-rates', checkSession, rateSchema, getRates);
+router.post('/courier-rates', checkSession, validation.rateSchema, getRates);
+
+// rewards
+router.get('/reward', checkSession, getRewards);
+
+// disbursements
+router.get('/disbursement', checkSession, getDisbursement);
+router.get('/disbursement/bank', checkSession, listBank);
+router.post('/disbursement', checkSession, createDisbursement);
+router.post('/disbursement/webhook', updateDisbursement);
 
 export default router;
