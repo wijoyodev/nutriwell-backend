@@ -77,7 +77,7 @@ export const networkOrderStat = async (value: string[]) => {
 export const findNetworkTotalById = async (queries: string, values: string[]) => {
   return await execute(
     `
-  SELECT COUNT(nd.id) as total_network FROM networks_test nd ${queries};
+  SELECT COUNT(nd.id) as total_network FROM networks nd ${queries};
   `,
     values,
   );
@@ -86,31 +86,30 @@ export const findNetworkTotalById = async (queries: string, values: string[]) =>
 export const findOrderTotalByNetwork = async (queries: string, values: string[]) => {
   return await execute(
     `
-    SELECT COUNT(o.id) as count_transaction FROM networks_test nd LEFT JOIN orders o ON o.user_id = nd.user_id ${queries} GROUP BY nd.user_id;
+    SELECT COUNT(o.id) as count_transaction FROM networks nd LEFT JOIN orders o ON o.user_id = nd.user_id ${queries} GROUP BY nd.user_id;
     `,
     values,
   );
 };
 
-export const findTotalDownlinePerNetwork = async (values: string[]) => {
-  return await execute(
-    `SELECT s.full_name, s.avatar_url, s.created_at, o.sum_transaction, nd.level_1, nd.total_transaction AS level_1_transaction, ne.level_2, ne.total_transaction AS level_2_transaction, nf.level_3, nf.total_transaction AS level_3_transaction, ng.level_4, ng.total_transaction AS level_4_transaction, nh.level_5, nh.total_transaction AS level_5_transaction FROM networks_test n 
-    LEFT JOIN(SELECT COUNT(user_id) as level_1, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_first_id FROM networks_test GROUP BY upline_first_id) nd ON nd.upline_first_id=n.user_id
-    LEFT JOIN(SELECT COUNT(user_id) as level_2, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_second_id FROM networks_test GROUP BY upline_second_id) ne ON ne.upline_second_id=n.user_id
-    LEFT JOIN(SELECT COUNT(user_id) as level_3, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_third_id FROM networks_test GROUP BY upline_third_id) nf ON nf.upline_third_id = n.user_id
-    LEFT JOIN(SELECT COUNT(user_id) as level_4, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_fourth_id FROM networks_test GROUP BY upline_fourth_id) ng ON ng.upline_fourth_id = n.user_id
-    LEFT JOIN(SELECT COUNT(user_id) as level_5, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_fifth_id FROM networks_test GROUP BY upline_fifth_id) nh ON nh.upline_fifth_id = n.user_id
-    LEFT JOIN(SELECT SUM(total_purchase - courier_rate) AS sum_transaction, user_id FROM orders WHERE user_id = 39) o ON o.user_id = n.user_id
+export const findTotalDownlinePerNetwork = async (user_id: string) => {
+  return await query(
+    `SELECT s.full_name, s.avatar_url, s.created_at, o.sum_transaction, nd.level_1, nd.total_transaction AS level_1_transaction, ne.level_2, ne.total_transaction AS level_2_transaction, nf.level_3, nf.total_transaction AS level_3_transaction, ng.level_4, ng.total_transaction AS level_4_transaction, nh.level_5, nh.total_transaction AS level_5_transaction FROM networks n 
+    LEFT JOIN(SELECT COUNT(user_id) as level_1, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_first_id FROM networks GROUP BY upline_first_id) nd ON nd.upline_first_id=n.user_id
+    LEFT JOIN(SELECT COUNT(user_id) as level_2, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_second_id FROM networks GROUP BY upline_second_id) ne ON ne.upline_second_id=n.user_id
+    LEFT JOIN(SELECT COUNT(user_id) as level_3, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_third_id FROM networks GROUP BY upline_third_id) nf ON nf.upline_third_id = n.user_id
+    LEFT JOIN(SELECT COUNT(user_id) as level_4, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_fourth_id FROM networks GROUP BY upline_fourth_id) ng ON ng.upline_fourth_id = n.user_id
+    LEFT JOIN(SELECT COUNT(user_id) as level_5, COUNT(IF(has_transaction = 1, 1, NULL)) as total_transaction, upline_fifth_id FROM networks GROUP BY upline_fifth_id) nh ON nh.upline_fifth_id = n.user_id
+    LEFT JOIN(SELECT SUM(total_purchase - courier_rate) AS sum_transaction, user_id FROM orders WHERE user_id = ${user_id}) o ON o.user_id = n.user_id
     LEFT JOIN users s ON s.id = n.user_id
-    WHERE n.user_id = ?;`,
-    values,
+    WHERE n.user_id = ${user_id};`,
   );
 };
 
 export const updateHasTransaction = async (values: string[]) => {
   return await execute(
     `
-      UPDATE networks_test 
+      UPDATE networks 
       SET has_transaction = ?
       WHERE user_id = ?;
     `,
@@ -121,7 +120,7 @@ export const updateHasTransaction = async (values: string[]) => {
 export const findNetworkById = async (values: string[]) => {
   return await execute(
     `
-      SELECT * FROM networks_test WHERE user_id = ?
+      SELECT * FROM networks WHERE user_id = ?
     `,
     values,
   );
@@ -132,7 +131,7 @@ export const listNetworks = async (queries: string, levelQueries: string, offset
     `
       SELECT s.full_name, s.avatar_url, s.referrer_code, s.referral_code, s.email, s.phone_number, s.created_at as join_date, se.city, nd.*, 
       JSON_OBJECT('full_name', sr.full_name, 'code', sr.code, 'join_date', sr.created_at, 'phone_number', sr.phone_number) AS upline,
-      (SELECT COUNT(nd.id) as total_network FROM networks_test nd WHERE nd.upline_first_id = s.id OR nd.upline_second_id = s.id OR nd.upline_third_id = s.id OR nd.upline_fourth_id = s.id OR nd.upline_fifth_id = s.id) as total_downlines,
+      (SELECT COUNT(nd.id) as total_network FROM networks nd WHERE nd.upline_first_id = s.id OR nd.upline_second_id = s.id OR nd.upline_third_id = s.id OR nd.upline_fourth_id = s.id OR nd.upline_fifth_id = s.id) as total_downlines,
       IF(nd.upline_fifth_id IS NOT NULL AND nd.upline_fifth_id = ${queries}, 5, 
       IF(nd.upline_fourth_id IS NOT NULL AND nd.upline_fourth_id = ${queries}, 4, 
       IF(nd.upline_third_id IS NOT NULL AND nd.upline_third_id = ${queries}, 3, 
@@ -140,7 +139,7 @@ export const listNetworks = async (queries: string, levelQueries: string, offset
       IF(nd.upline_first_id IS NOT NULL AND nd.upline_first_id = ${queries}, 1, 0))))) AS level 
       FROM users s 
       LEFT JOIN users sr ON sr.referral_code=s.referrer_code 
-      JOIN networks_test nd ON s.id=nd.user_id LEFT JOIN shipments se ON se.user_id=s.id WHERE ${levelQueries}
+      JOIN networks nd ON s.id=nd.user_id LEFT JOIN shipments se ON se.user_id=s.id WHERE ${levelQueries}
       ORDER BY level LIMIT 10 OFFSET ${offset};
       `,
   );

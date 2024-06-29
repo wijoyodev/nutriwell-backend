@@ -25,6 +25,7 @@ const DB = {
   DB_DATABASE: process.env.DB_DATABASE,
 };
 const EMAIL_SERVICE = {
+  API_URL: 'https://api.emailjs.com/api/v1.0/email/send',
   SERVICE_ID: 'service_tr7a0ze',
   TEMPLATE_RESET_PASSWORD_ID: 'template_p6qt6gx',
   TEMPLATE_VERIFICATION_ID: 'template_u1dvl5t',

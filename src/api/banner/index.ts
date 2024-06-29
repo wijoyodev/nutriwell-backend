@@ -27,7 +27,7 @@ const updateBanner = async (requestPayload: { [key: string]: string }) => {
 };
 
 const selectBanner = async (requestPayload: QueryBanner, methodQuery: string = 'and') => {
-  const { queryTemplate, queryValue } = queriesMaker(requestPayload, methodQuery);
+  const { queryTemplate, queryValue } = queriesMaker(requestPayload, methodQuery, '', ['title', 'description']);
   const [result] = await bannerService.selectBanner(queryTemplate, queryValue);
   return result;
 };

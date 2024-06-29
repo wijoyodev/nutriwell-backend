@@ -10,15 +10,14 @@ const createShipment = async (payload: ShipmentPayload) => {
     province,
     city,
     district,
-    subdistrict,
     address_detail,
     postal_code,
   } = payload;
   return await execute(
     `
         INSERT INTO shipments
-        (user_id,recipient_name,recipient_phone_number,phone_number_country,province,city,district,subdistrict,address_detail,postal_code)
-        VALUES(?,?,?,?,?,?,?,?,?,?)
+        (user_id,recipient_name,recipient_phone_number,phone_number_country,province,city,district,address_detail,postal_code)
+        VALUES(?,?,?,?,?,?,?,?,?)
     `,
     [
       user_id,
@@ -28,7 +27,6 @@ const createShipment = async (payload: ShipmentPayload) => {
       province,
       city,
       district,
-      subdistrict,
       address_detail,
       postal_code,
     ],

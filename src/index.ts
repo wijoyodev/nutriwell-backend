@@ -53,12 +53,10 @@ app.get('/logs', (req, res) => {
 });
 
 app.get('/.well-known/assetlinks.json', function (req, res) {
-  console.log(__dirname, 'iniii');
   res.sendFile(__dirname + '/assetlinks.json');
 });
 
 app.get('/.well-known/apple-app-site-association', function (req, res) {
-  console.log(__dirname, 'iniii');
   res.sendFile(__dirname + '/apple-app-site-association');
 });
 

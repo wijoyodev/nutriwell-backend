@@ -1,4 +1,4 @@
-import { execute } from '.';
+import { execute, query } from '.';
 
 const createDisbursement = async (queries: string, values: (string | number)[]) => {
   return await execute(
@@ -13,6 +13,13 @@ const createDisbursement = async (queries: string, values: (string | number)[]) 
 const getDisbursement = async (queries: string, values: string[], offset = '0') => {
   return await execute(
     `SELECT d.*, s.full_name, s.account_bank, s.account_bank_name, s.account_bank_code, s.account_bank_number FROM disbursements d LEFT JOIN users s ON s.id=d.user_id ${queries} ORDER BY created_at DESC LIMIT 10 OFFSET ${offset}`,
+    values,
+  );
+};
+
+const getDisbursementData = async (queries: string, values: string[]) => {
+  return await execute(
+    `SELECT COUNT(d.id) as total_data FROM disbursements d LEFT JOIN users s ON s.id=d.user_id ${queries}`,
     values,
   );
 };
@@ -36,4 +43,17 @@ const getDisbursementStat = async (queries: string, values: string[]) => {
   );
 };
 
-export { createDisbursement, getDisbursement, updateDisbursement, getDisbursementStat };
+const getTotalDisbursement = async (user_id: string) => {
+  return await query(
+    `SELECT SUM(disbursement_value) as total_disbursement FROM disbursements WHERE user_id=${user_id} AND status_disbursement IN ('PENDING','SUCCESS');`,
+  );
+};
+
+export {
+  createDisbursement,
+  getDisbursement,
+  updateDisbursement,
+  getDisbursementStat,
+  getTotalDisbursement,
+  getDisbursementData,
+};

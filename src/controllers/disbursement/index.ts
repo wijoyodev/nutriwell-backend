@@ -74,13 +74,21 @@ const getDisbursement = async (
 ) => {
   try {
     Logger.info(`Get Disbursement -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
-    const { user_id, status, offset, id } = req.query;
-    const result = await disbursementApi.getDisbursementList({
+    const { user_id, status, search, offset, start, end, id } = req.query;
+    const queriesPayload = {
       id: id ?? '',
+      search,
       user_id: user_id ?? '',
       status: status?.split(','),
       offset,
-    });
+      start: '',
+      end: '',
+    };
+    if (start && end) {
+      queriesPayload.start = new Date(Number(start) * 1000).toLocaleString('sv-SE');
+      queriesPayload.end = new Date(Number(end) * 1000).toLocaleString('sv-SE');
+    }
+    const result = await disbursementApi.getDisbursementList(queriesPayload);
     Logger.info(`Get Disbursement -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ result });
   } catch (err) {

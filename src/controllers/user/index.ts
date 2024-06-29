@@ -39,7 +39,7 @@ const registerUser = async (req: Request, res: Response, next: NextFunction) => 
       referral_code: referralCodeGenerator(),
       date_of_birth: new Date(date_of_birth).toLocaleString('sv-SE'),
       role: 4,
-      status: 0,
+      status: 1,
     };
     // check if there is avatar image uploaded
     if (req.file) payload.avatar_url = API_URL + req.file?.path.split('uploads')[1];

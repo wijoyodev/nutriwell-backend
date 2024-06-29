@@ -19,7 +19,7 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
         product_images: JSON.stringify(product_images),
         product_name: req.body.product_name,
         description: req.body.description,
-        price: req.body.price,
+        price: Number(req.body.price),
       };
       const result = await productApi.createProduct(createPayload);
       Logger.info(`Create Product -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);

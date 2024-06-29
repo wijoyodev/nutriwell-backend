@@ -19,6 +19,15 @@ const getRewards = async (queries?: string, values?: string[], offset = '0') => 
   );
 };
 
+const countReward = async (queries?: string, values?: string[], offset = '0') => {
+  return await execute(
+    `
+  SELECT COUNT(id) AS total_data FROM rewards ${queries} ORDER BY created_at DESC LIMIT 10 OFFSET ${offset};
+  `,
+    values,
+  );
+};
+
 const totalRewardThisMonth = async (queries?: string) => {
   return await query(`
   SELECT SUM(reward_profit) as total_this_month FROM rewards WHERE MONTH(created_at) = MONTH(CURRENT_DATE) ${queries}
@@ -34,4 +43,4 @@ const totalRewards = async (queries: string, values: string[]) => {
   );
 };
 
-export { createReward, getRewards, totalRewards, totalRewardThisMonth };
+export { createReward, getRewards, totalRewards, totalRewardThisMonth, countReward };

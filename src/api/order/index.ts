@@ -1,6 +1,7 @@
-import { ERROR_NAME } from '../../constants';
+import { ERROR_NAME, PDD_NUMBER, PPN_NUMBER } from '../../constants';
 import Logger from '../../lib/logger';
 import * as orderService from '../../services/orders';
+import * as productService from '../../services/products';
 import * as cartService from '../../services/carts';
 import * as networkService from '../../services/networks';
 import { API_URL, BITESHIP_HEADER, BITESHIP_URL, XENDIT_HEADER, XENDIT_URL } from '../../settings';
@@ -18,7 +19,6 @@ const createOrder = async (requestPayload: {
   courier_name: string;
   courier_service_name: string;
   courier_rate: number;
-  total_purchase: number;
   shipment_duration_range: string;
 }) => {
   const {
@@ -28,7 +28,6 @@ const createOrder = async (requestPayload: {
     courier_name,
     courier_service_name,
     courier_rate,
-    total_purchase,
     courier_company,
     courier_type,
     shipment_duration_range,
@@ -42,12 +41,10 @@ const createOrder = async (requestPayload: {
     courier_name,
     courier_service_name,
     courier_rate,
-    total_purchase,
     code: '',
     order_number: String(orderGenerator()),
     status: 0,
   };
-
   const rangeDelivery = shipment_duration_range ? shipment_duration_range.split(' - ') : [];
   dataPayload.courier_max_time =
     rangeDelivery.length > 1
@@ -55,15 +52,16 @@ const createOrder = async (requestPayload: {
       : rangeDelivery.length > 0
         ? Number(rangeDelivery[0])
         : 0;
-
   // get address detail and product detail
   const [orderDetails] = await orderService.selectOrderDetails([dataPayload.cart_id, dataPayload.address_shipment_id]);
   if (Array.isArray(orderDetails) && orderDetails.length > 0) {
-    const { user_detail } = orderDetails[0];
+    const { user_detail, product_detail, total_price_after_tax, total_price } = orderDetails[0];
+    dataPayload.total_purchase = total_price + dataPayload.courier_rate;
+    dataPayload.total_purchase_after_tax = total_price_after_tax + dataPayload.courier_rate;
     // payment payload to xendit
     const paymentPayload = {
       external_id: dataPayload.order_number,
-      amount: dataPayload.total_purchase,
+      amount: dataPayload.total_purchase_after_tax,
       customer: {
         given_names: user_detail.full_name,
         email: user_detail.email,
@@ -108,9 +106,11 @@ const createOrder = async (requestPayload: {
     const [result] = await orderService.createOrder(updateKeys, arrPayload);
     // update certain cart to be non active in product page
     await cartService.updateStatusCart([0, cart_id]);
+    // wait for product_histories data to be made
+    await productService.createProductHistory({ ...product_detail, cart_id });
     if (result.affectedRows === 0) Logger.error(`Order creation failed: No affected row when creating one.`);
     return { affectedRows: result.affectedRows, invoice_url };
-  }
+  } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not obtain cart and addresss data. Mismatch ids.' };
 };
 
 const updateOrder = async (requestPayload: { [key: string]: string | number }, idToUpdate = 'id') => {
@@ -120,9 +120,9 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
   if (rest.delivery_date) rest.delivery_date = new Date(rest.delivery_date).toLocaleString('sv-SE');
   if (rest.receive_date) rest.receive_date = new Date(rest.receive_date).toLocaleString('sv-SE');
   // if null, payload field will be deleted
-  Object.keys(rest).forEach((field) => !rest[field] && delete rest[field]);
+  Object.keys(rest).forEach((field) => !rest[field] && rest[field] !== 0 && delete rest[field]);
   const keys = Object.keys(rest).map((item) => `${item} = ?`);
-  const values = Object.values(rest).filter((item) => item);
+  const values = Object.values(rest).filter((item) => item || item === 0);
   const dataPayload = {
     keys,
     values,
@@ -166,7 +166,7 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
           origin_postal_code: 16112,
           destination_contact_name: user_detail.recipient_name,
           destination_contact_phone: user_detail.recipient_phone_number,
-          destination_address: `${user_detail.address_detail}, ${user_detail.subdistrict}, ${user_detail.district}, ${user_detail.province}`,
+          destination_address: `${user_detail.address_detail}, ${user_detail.district}, ${user_detail.province}`,
           destination_postal_code: user_detail.postal_code,
           courier_company,
           courier_type,
@@ -234,25 +234,35 @@ const selectOrders = async (requestPayload: QueryOrders, methodQuery: string = '
     'shipment_number',
     'external_id',
     'code',
+    'order_number',
   ]);
   const [result] = await orderService.selectOrders(queryTemplate, queryValue, sort, offset);
   let totalOrders = 0;
+  let totalNetIncome = 0;
+  let totalNetIncomeAfterTax = 0;
   if (Array.isArray(result) && result.length > 0) {
     result.map((item) => {
       item.product_detail.product_image = JSON.parse(item.product_detail.product_image);
       item.courier_rate = parseFloat(item.courier_rate);
       item.total_purchase = parseFloat(item.total_purchase);
+      item.net_income = parseFloat(item.net_income);
     });
     const [resultTotalOrders] = await orderService.findTotalOrders(queryTemplate, queryValue);
     if (Array.isArray(resultTotalOrders) && resultTotalOrders.length > 0) {
-      const { total_orders } = resultTotalOrders[0];
+      const { total_orders, total_net_income, total_net_income_after_tax } = resultTotalOrders[0];
       totalOrders = total_orders;
+      totalNetIncome = parseFloat(total_net_income);
+      totalNetIncomeAfterTax = parseFloat(total_net_income_after_tax);
     }
     return {
       data: result,
+      tax_detail: {
+        ppn_tax: PPN_NUMBER,
+        pdd_tax: PDD_NUMBER,
+      },
       offset: Number(offset) || 0,
       limit: 10,
-      total: totalOrders,
+      total: { totalOrders, totalNetIncome, totalGrossIncome: totalNetIncomeAfterTax },
     };
   }
   return {
@@ -270,7 +280,13 @@ const selectOrderById = async (requestPayload: string) => {
     result[0].product_detail.product_image = JSON.parse(result[0].product_detail.product_image);
     result[0].courier_rate = parseFloat(result[0].courier_rate);
     result[0].total_purchase = parseFloat(result[0].total_purchase);
-    return result;
+    return {
+      data: result,
+      tax_detail: {
+        ppn_tax: PPN_NUMBER,
+        pdd_tax: PDD_NUMBER,
+      },
+    };
   } else return [];
 };
 
