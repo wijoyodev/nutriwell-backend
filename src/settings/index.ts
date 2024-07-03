@@ -8,8 +8,9 @@ const XENDIT_URL = process.env.XENDIT_URL;
 const XENDIT_API_KEY = process.env.SECRET_XENDIT ?? '';
 const BITESHIP_API_KEY = process.env.SECRET_BITESHIP ?? '';
 const XENDIT_WEBHOOK_TOKEN = process.env.XENDIT_WEBHOOK_TOKEN;
-const PRIVATE_KEY = fs.readFileSync(path.join(__dirname.split('Documents')[0], '.ssh/rs256_nutriwell'), 'utf8');
-const PUBLIC_KEY = fs.readFileSync(path.join(__dirname.split('Documents')[0], '.ssh/rs256_nutriwell.pub'), 'utf8');
+const CONFIG_PATH = process.env.CONFIG_PATH ?? '/root';
+const PRIVATE_KEY = fs.readFileSync(path.join(CONFIG_PATH, '.ssh/rs256_nutriwell'), 'utf8');
+const PUBLIC_KEY = fs.readFileSync(path.join(CONFIG_PATH, '.ssh/rs256_nutriwell.pub'), 'utf8');
 const XENDIT_HEADER = { 'Content-Type': 'application/json', Authorization: `Basic ${btoa(XENDIT_API_KEY + ':')}` };
 const BITESHIP_HEADER = [
   ['Content-Type', 'application/json'],
@@ -32,7 +33,6 @@ const EMAIL_SERVICE = {
   USER_ID: 'ozxbQV2BQmrxvbrsG',
   ACCESS_TOKEN: process.env.MAILJS_TOKEN,
 };
-const CONFIG_PATH = process.env.CONFIG_PATH ?? '/root';
 
 export {
   COOKIE_SECRET,
