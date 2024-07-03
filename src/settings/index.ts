@@ -32,6 +32,7 @@ const EMAIL_SERVICE = {
   USER_ID: 'ozxbQV2BQmrxvbrsG',
   ACCESS_TOKEN: process.env.MAILJS_TOKEN,
 };
+const CONFIG_PATH = process.env.CONFIG_PATH ?? '/root';
 
 export {
   COOKIE_SECRET,
@@ -48,4 +49,5 @@ export {
   XENDIT_HEADER,
   XENDIT_WEBHOOK_TOKEN,
   EMAIL_SERVICE,
+  CONFIG_PATH,
 };

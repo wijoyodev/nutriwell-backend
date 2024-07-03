@@ -7,12 +7,12 @@ import { ERROR_NAME } from '../../constants';
 import { tokenPayload } from '../../types';
 import { findUserByEmail, findUserByRefreshToken, findUserByValue, updateUser } from '../../services/users';
 import { emailPayloadGenerator, queriesMaker, setDeadlineDate } from '../../utils';
-import { API_URL, EMAIL_SERVICE } from '../../settings';
+import { API_URL, CONFIG_PATH, EMAIL_SERVICE } from '../../settings';
 import { findNetworkByCode } from '../../services/networks';
 import * as verificationService from '../../services/verifications';
 
 export const signToken = (payload: tokenPayload, user = '', newRefreshToken = true) => {
-  const privateKey = fs.readFileSync(path.join(__dirname.split('Documents')[0], '.ssh/rs256_nutriwell'), 'utf8');
+  const privateKey = fs.readFileSync(path.join(CONFIG_PATH, '.ssh/rs256_nutriwell'), 'utf8');
   const token = jwt.sign(payload, privateKey, { algorithm: 'RS256', subject: user, expiresIn: '3h' });
   if (newRefreshToken) {
     const refreshToken = jwt.sign(payload, privateKey, { algorithm: 'RS256', subject: user, expiresIn: '30d' });
@@ -27,7 +27,7 @@ export const signToken = (payload: tokenPayload, user = '', newRefreshToken = tr
 };
 
 export const verifyToken = (token: string, user = '') => {
-  const publicKey = fs.readFileSync(path.join(__dirname.split('Documents')[0], '.ssh/rs256_nutriwell.pub'), 'utf8');
+  const publicKey = fs.readFileSync(path.join(CONFIG_PATH, '.ssh/rs256_nutriwell'), 'utf8');
   const verifyToken = jwt.verify(token, publicKey, { algorithms: ['RS256'], subject: user, complete: true });
   return verifyToken;
 };
