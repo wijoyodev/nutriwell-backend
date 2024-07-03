@@ -9,7 +9,7 @@
     "lint": "npx eslint .",
     "format": "npx prettier --write src",
     "build": "rimraf dist && tsc -p tsconfig.json",
-    "pm2": "NODE_ENV=production pm2 start dist/index.js"
+    "pm2": "NODE_ENV=production pm2 start dist/index.js --name nutriwell-backend"
   },
   "keywords": [],
   "author": "",
