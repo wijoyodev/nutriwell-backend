@@ -196,3 +196,6 @@ export const taxDeducter = (amount: number) => {
     taxToDeduct,
   };
 };
+
+export const setDeadlineDate = (dayOfDeadline: number) =>
+  new Date(new Date().setDate(new Date().getDate() + dayOfDeadline)).toLocaleString('sv-SE');

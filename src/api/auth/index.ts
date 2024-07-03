@@ -6,7 +6,7 @@ import { createSession, updateSession, deleteSession, bulkDeleteSession, findSes
 import { ERROR_NAME } from '../../constants';
 import { tokenPayload } from '../../types';
 import { findUserByEmail, findUserByRefreshToken, findUserByValue, updateUser } from '../../services/users';
-import { emailPayloadGenerator, queriesMaker } from '../../utils';
+import { emailPayloadGenerator, queriesMaker, setDeadlineDate } from '../../utils';
 import { API_URL, EMAIL_SERVICE } from '../../settings';
 import { findNetworkByCode } from '../../services/networks';
 import * as verificationService from '../../services/verifications';
@@ -246,7 +246,7 @@ export const verificationEmail = async (payload: { email: string; referrer_code?
       } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Failed to check referrer code.' };
     }
     // expiry of verification email token
-    const expireDate = new Date(new Date().setDate(new Date().getDate() + 1)).toLocaleString('sv-SE');
+    const expireDate = setDeadlineDate(1);
     const payloadToken = `email=${email}&referrer_code=${referrer_code}`;
     // create token
     const verificationToken = btoa(payloadToken);
