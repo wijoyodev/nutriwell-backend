@@ -22,6 +22,7 @@ jobs:
           git pull origin develop/improvement
           git status
           rm -rf node_modules
+          nvm use
           npm install --only=prod
           npm run build
           pm2 restart nutriwell-backend
