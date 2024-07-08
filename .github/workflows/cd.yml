@@ -24,11 +24,15 @@ jobs:
         password: ${{ secrets.PASSWORD }}
         port: 22
         script: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+          export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           npm install pm2 -g
           cd ~/nutriwell-backend
           git pull origin develop/improvement
           git status
           rm -rf node_modules
+          nvm use
           npm install --only=prod
           npm run build
           pm2 restart nutriwell-backend
