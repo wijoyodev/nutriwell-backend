@@ -12,7 +12,6 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
     if (!validation.isEmpty()) {
       throw { name: ERROR_NAME.BAD_REQUEST, message: validation.array() };
     }
-    console.log(req.files, 'req files')
     if (Array.isArray(req.files)) {
       if (req.files.length < 1) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Images are not uploaded.' };
       const product_images = req.files?.map((item: Express.Multer.File) => API_URL + item.path.split('uploads')[1]);
@@ -27,7 +26,6 @@ const createProduct = async (req: Request, res: Response, next: NextFunction) =>
       res.status(201).json({ result: { status: result.affectedRows } });
     } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Error while uploading images.' };
   } catch (err) {
-    console.log(err, 'INI ERROR')
     Logger.error(
       `Create Product -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: ${JSON.stringify(err)}`,
     );

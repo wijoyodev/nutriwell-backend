@@ -188,24 +188,19 @@ export const resetPassword = async (email: string) => {
     );
     if (saveResetToken && saveResetToken.affectedRows) {
       // send email to user for reset password
-      const emailCreds = {
-        service_id: EMAIL_SERVICE.SERVICE_ID,
-        template_id: EMAIL_SERVICE.TEMPLATE_RESET_PASSWORD_ID,
-        user_id: EMAIL_SERVICE.USER_ID,
-        accessToken: EMAIL_SERVICE.ACCESS_TOKEN,
-        template_params: {
-          from_name: 'Nutriwell',
-          to_name: full_name,
-          reset_link: `https://witty-previously-sunbeam.ngrok-free.app/reset-password/${btoa(resetToken)}`,
-          email_recipient: email,
-        },
+      const emailBody = {
+        from_name: 'Nutriwell',
+        to_name: full_name,
+        reset_link: `${API_URL}/${btoa(resetToken)}`,
+        email_recipient: email,
       };
-      const result = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      const emailTemplate = emailPayloadGenerator(EMAIL_SERVICE.TEMPLATE_RESET_PASSWORD_ID, emailBody);
+      const result = await fetch(EMAIL_SERVICE.API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(emailCreds),
+        body: JSON.stringify(emailTemplate),
       });
       if (result.statusText !== 'OK')
         throw { name: ERROR_NAME.RESET_PASSWORD, message: `Failed to send reset password email: ${result.statusText}` };

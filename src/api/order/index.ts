@@ -1,4 +1,4 @@
-import { ERROR_NAME, PDD_NUMBER, PPN_NUMBER } from '../../constants';
+import { CACHE_KEY, ERROR_NAME, PDD_NUMBER, PPN_NUMBER } from '../../constants';
 import Logger from '../../lib/logger';
 import * as orderService from '../../services/orders';
 import * as productService from '../../services/products';
@@ -9,6 +9,7 @@ import { OrderPayload, QueryOrders } from '../../types';
 import { apiCall, orderGenerator, rewardComission } from '../../utils';
 import { queriesMaker } from '../../utils';
 import { createReward } from '../../services/rewards';
+import { generateCache, getCache } from '../../lib/cache';
 
 const createOrder = async (requestPayload: {
   user_id: string;
@@ -291,16 +292,25 @@ const selectOrderById = async (requestPayload: string) => {
 };
 
 const getTracking = async (requestPayload: string) => {
-  const orderSentResult = await apiCall<{
-    success: boolean;
-    id: string;
-    courier: { [key: string]: string };
-    error?: string;
-  }>(`${BITESHIP_URL}/v1/orders/${requestPayload}`, {
-    headers: new Headers(BITESHIP_HEADER),
-  });
-  if (orderSentResult.success) return orderSentResult.courier;
-  else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not obtain history of shipment' };
+  const cacheData = getCache(CACHE_KEY.tracking);
+  if (!cacheData) {
+    const orderSentResult = await apiCall<{
+      success: boolean;
+      id: string;
+      courier: { [key: string]: string };
+      error?: string;
+    }>(`${BITESHIP_URL}/v1/orders/${requestPayload}`, {
+      headers: new Headers(BITESHIP_HEADER),
+    });
+    if (orderSentResult.success) {
+      const saveCache = generateCache(CACHE_KEY.tracking, orderSentResult.courier);
+      if (!saveCache) Logger.error(`Cache: Set cache with key ${CACHE_KEY.rates} failed`);
+      return orderSentResult.courier;
+    } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not obtain history of shipment' };
+  } else {
+    Logger.info(`Cache: Generate tracking data with cache`);
+    return cacheData;
+  }
 };
 
 export { createOrder, updateOrder, selectOrders, getTracking, selectOrderById };

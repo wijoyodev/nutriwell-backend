@@ -1,0 +1,20 @@
+name: Nutriwell CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop/improvement
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node based on .nvmrc file
+      uses: actions/setup-node@v2
+      with:
+        node-version-file: .nvmrc
+    - run: npm i
+    - run: npm run build

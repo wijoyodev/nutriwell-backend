@@ -11,6 +11,7 @@ const createShipment = async (requestPayload: ShipmentPayload) => {
 
 const updateShipment = async (requestPayload: { [key: string]: string }) => {
   const { id, ...rest } = requestPayload;
+  if (rest.recipient_phone_number) rest.recipient_phone_number = phoneNumberChecker(rest.recipient_phone_number);
   const keys = Object.keys(rest).map((item) => `${item} = ?`);
   const values = Object.values(rest);
   const dataPayload = {

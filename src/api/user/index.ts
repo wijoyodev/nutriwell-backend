@@ -133,10 +133,8 @@ export const findUser = async (data: { [key: string]: string }) => {
 export const findProfile = async (userId: string) => {
   const { queryTemplate, queryValue } = queriesMaker({ id: userId }, 'and', 's');
   const [resultUser] = await findUserByValue(queryTemplate, queryValue);
-  // const [resultNetwork] = await networkOrderStat([userId]);
   return {
     data: resultUser,
-    //  network_reference: resultNetwork
   };
 };
 
@@ -176,8 +174,10 @@ export const update = async (data: { [key: string]: string }, id: string, header
     };
   const [result] = await updateUser(field, ['id'], [...values, String(id)]);
   if (result.affectedRows) {
+    Object.keys(rest).forEach((field) => field === 'password' && delete rest[field]);
     return {
       status: result.affectedRows,
+      updatedData: rest,
     };
   } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not update user.' };
 };

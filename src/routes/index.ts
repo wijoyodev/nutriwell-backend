@@ -30,9 +30,7 @@ import { getRates } from '../controllers/courier-rate';
 import { getRewards } from '../controllers/reward';
 import { createDisbursement, getDisbursement, listBank, updateDisbursement } from '../controllers/disbursement';
 import { selectCity, selectDistrict, selectProvince } from '../controllers/address';
-import { CONFIG_PATH } from '../settings';
 import path from 'path';
-console.log(path.join(__dirname, '../../uploads'))
 const router = express.Router();
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, path.join(__dirname, '../../uploads')),
@@ -42,8 +40,6 @@ const storage = multer.diskStorage({
   },
 });
 const upload = multer({ storage });
-
-console.log(upload, 'this is multer')
 
 // auth
 /**
