@@ -1,15 +1,12 @@
 name: Nutriwell CI
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - '*'
 
 jobs:
-  CI:
+  test-development:
     runs-on: ubuntu-latest
 
     steps:

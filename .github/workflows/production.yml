@@ -6,6 +6,16 @@ on:
       - main
 
 jobs:
+  CI:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node based on .nvmrc file
+      uses: actions/setup-node@v2
+      with:
+        node-version-file: .nvmrc
+    - run: npm i
+    - run: npm run build
   CD:
     runs-on: ubuntu-latest
     needs: CI
