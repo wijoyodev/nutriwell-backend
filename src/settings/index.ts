@@ -27,10 +27,10 @@ const DB = {
 };
 const EMAIL_SERVICE = {
   API_URL: 'https://api.emailjs.com/api/v1.0/email/send',
-  SERVICE_ID: 'service_tr7a0ze',
-  TEMPLATE_RESET_PASSWORD_ID: 'template_p6qt6gx',
-  TEMPLATE_VERIFICATION_ID: 'template_u1dvl5t',
-  USER_ID: 'ozxbQV2BQmrxvbrsG',
+  SERVICE_ID: process.env.ENVIRONMENT === 'dev' ? 'service_tr7a0ze' : 'service_0acl3dk',
+  TEMPLATE_RESET_PASSWORD_ID: process.env.ENVIRONMENT === 'dev' ? 'template_p6qt6gx' : 'template_nxmdcpt',
+  TEMPLATE_VERIFICATION_ID: process.env.ENVIRONMENT === 'dev' ? 'template_u1dvl5t' : 'template_0n5jywb',
+  USER_ID: process.env.ENVIRONMENT === 'dev' ? 'ozxbQV2BQmrxvbrsG' : 'grTOHs9KEIi9zkhYb',
   ACCESS_TOKEN: process.env.MAILJS_TOKEN,
 };
 
