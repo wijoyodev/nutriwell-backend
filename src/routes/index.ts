@@ -29,10 +29,11 @@ import {
 import { getRates } from '../controllers/courier-rate';
 import { getRewards } from '../controllers/reward';
 import { createDisbursement, getDisbursement, listBank, updateDisbursement } from '../controllers/disbursement';
-
+import { selectCity, selectDistrict, selectProvince } from '../controllers/address';
+import path from 'path';
 const router = express.Router();
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, `${__dirname}/../uploads`),
+  destination: (_req, _file, cb) => cb(null, path.join(__dirname, '../../uploads')),
   filename: (_req, file, cb) => {
     const ext = file.originalname.substring(file.originalname.lastIndexOf('.'));
     cb(null, `img-${Date.now()}${ext}`);
@@ -41,7 +42,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // auth
-router.get('/verification-email/:token', verifyEmail);
 /**
  @swagger
  /verification-email:
@@ -108,6 +108,7 @@ router.get('/verification-email/:token', verifyEmail);
  *                                  example: Error
  */
 router.post('/verification-email', verificationEmail);
+router.get('/verification-email/:token', verifyEmail);
 /**
  @swagger
  /register:
@@ -749,8 +750,8 @@ router.patch('/cart/:id', checkSession, updateQuantityCart);
 router.delete('/cart/:id', checkSession, deleteCart);
 
 // orders
-router.get('/orders', checkSession, selectOrders);
-router.get('/orders/me', checkSession, selectMyOrders);
+router.get('/order', checkSession, selectOrders);
+router.get('/order/me', checkSession, selectMyOrders);
 router.get('/order/track/:external_id', checkSession, getTracking);
 router.post('/order', checkSession, validation.orderSchema, createOrder);
 router.post('/order/webhook', updateOrderWebhook);
@@ -768,5 +769,10 @@ router.get('/disbursement', checkSession, getDisbursement);
 router.get('/disbursement/bank', checkSession, listBank);
 router.post('/disbursement', checkSession, createDisbursement);
 router.post('/disbursement/webhook', updateDisbursement);
+
+// address
+router.get('/address-list/province', checkSession, selectProvince);
+router.get('/address-list/city', checkSession, selectCity);
+router.get('/address-list/district', checkSession, selectDistrict);
 
 export default router;

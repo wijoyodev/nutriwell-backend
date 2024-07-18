@@ -9,6 +9,7 @@ const access: PoolOptions = {
   connectionLimit: 10,
   waitForConnections: true,
   timezone: DB.DB_TIMEZONE,
+  decimalNumbers: true,
 };
 
 const pool = mysql.createPool(access);

@@ -38,8 +38,8 @@ const updateQuantityCart = async (req: Request, res: Response, next: NextFunctio
       throw { name: ERROR_NAME.BAD_REQUEST, message: validation.array() };
     }
     const { id } = req.params;
-    const { quantity, price, weight } = req.body;
-    const result = await cartApi.updateQuantityCart({ quantity, price, weight }, id);
+    const { quantity, price, weight, price_after_tax } = req.body;
+    const result = await cartApi.updateQuantityCart({ quantity, price, weight, price_after_tax }, id);
     Logger.info(`Update Cart -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ result: { status: result.affectedRows } });
   } catch (err) {

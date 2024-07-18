@@ -19,7 +19,6 @@ const createShipment = async (req: Request, res: Response, next: NextFunction) =
       province,
       city,
       district,
-      subdistrict,
       address_detail,
       postal_code,
     } = req.body;
@@ -31,7 +30,6 @@ const createShipment = async (req: Request, res: Response, next: NextFunction) =
       province,
       city,
       district,
-      subdistrict,
       address_detail,
       postal_code,
     };

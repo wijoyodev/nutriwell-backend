@@ -21,7 +21,7 @@ app.use(morgan(settings.MORGAN_FORMAT));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(settings.COOKIE_SECRET));
-app.use(express.static(join(__dirname, './uploads')));
+app.use(express.static(join(__dirname, '../uploads')));
 app.use(clientInfo as express.RequestHandler);
 // swagger documentation
 app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(openApiSpecification));
@@ -53,13 +53,11 @@ app.get('/logs', (req, res) => {
 });
 
 app.get('/.well-known/assetlinks.json', function (req, res) {
-  console.log(__dirname, 'iniii');
-  res.sendFile(__dirname + '/assetlinks.json');
+  res.sendFile(join(__dirname, '../assetlinks.json'));
 });
 
 app.get('/.well-known/apple-app-site-association', function (req, res) {
-  console.log(__dirname, 'iniii');
-  res.sendFile(__dirname + '/apple-app-site-association');
+  res.sendFile(join(__dirname, '../apple-app-site-association'));
 });
 
 app.use(router);

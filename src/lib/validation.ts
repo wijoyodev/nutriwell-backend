@@ -178,11 +178,6 @@ export const shipmentSchema = checkSchema({
       errorMessage: FIELD_EMPTY,
     },
   },
-  subdistrict: {
-    notEmpty: {
-      errorMessage: FIELD_EMPTY,
-    },
-  },
   address_detail: {
     notEmpty: {
       errorMessage: FIELD_EMPTY,
@@ -240,11 +235,6 @@ export const orderSchema = checkSchema({
     },
   },
   courier_type: {
-    notEmpty: {
-      errorMessage: FIELD_EMPTY,
-    },
-  },
-  total_purchase: {
     notEmpty: {
       errorMessage: FIELD_EMPTY,
     },

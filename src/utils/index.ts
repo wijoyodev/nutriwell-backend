@@ -83,7 +83,11 @@ export const queriesMaker = (
       objectQueries[key] = {
         condition: Object.keys(queries[key])
           .filter((item) => item)
-          .map((item) => `${alias ? alias + '.' : ''}${item} = ?`),
+          .map((item) => {
+            if (item === 'start' && Object.values(queries[key])) return `${alias ? alias + '.' : ''}created_at >= ?`;
+            else if (item === 'end' && Object.values(queries[key])) return `${alias ? alias + '.' : ''}created_at <= ?`;
+            else return `${alias ? alias + '.' : ''}${item} = ?`;
+          }),
         value: Object.values(queries[key]).filter((item) => item),
       };
   }
@@ -170,10 +174,12 @@ export const rewardComission = (total_price: number, level: string) => {
 
 export const monthBeforeGenerator = () => {
   const d = new Date();
-  const month = d.getMonth();
-  const year = d.getFullYear();
-  const date = new Date(year, month, 0).toLocaleString('sv-SE');
-  return date;
+  // const month = d.getMonth();
+  // const year = d.getFullYear();
+  // const date = new Date(year, month, 0).toLocaleString('sv-SE');
+  // return date;
+  d.setMinutes(d.getMinutes() - 1);
+  return d.toLocaleString('sv-SE');
 };
 
 export const taxDeducter = (amount: number) => {
@@ -190,3 +196,6 @@ export const taxDeducter = (amount: number) => {
     taxToDeduct,
   };
 };
+
+export const setDeadlineDate = (dayOfDeadline: number) =>
+  new Date(new Date().setDate(new Date().getDate() + dayOfDeadline)).toLocaleString('sv-SE');

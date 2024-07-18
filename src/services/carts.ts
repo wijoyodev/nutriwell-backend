@@ -2,20 +2,20 @@ import { execute, query } from '.';
 import { CartPayload } from '../types';
 
 const createCart = async (payload: CartPayload) => {
-  const { user_id, product_id, quantity, total_weight, total_price, status_cart } = payload;
+  const { user_id, product_id, quantity, total_weight, total_price, status_cart, total_price_after_tax } = payload;
   return await execute(
     `
         INSERT INTO carts
-        (user_id,product_id,quantity,total_weight,total_price,status_cart)
-        VALUES(?,?,?,?,?,?);
+        (user_id,product_id,quantity,total_weight,total_price,status_cart,total_price_after_tax)
+        VALUES(?,?,?,?,?,?,?);
     `,
-    [user_id, product_id, quantity, total_weight, total_price, status_cart],
+    [user_id, product_id, quantity, total_weight, total_price, status_cart, total_price_after_tax],
   );
 };
 
 const selectCart = async (conditionSql?: string, conditionValue?: string[]) => {
   return await execute(
-    `SELECT c.*,p.product_name,p.product_images,p.price,p.product_weight FROM carts c JOIN products p ON p.id = c.product_id ${conditionSql}`,
+    `SELECT c.*,p.product_name,p.product_images,p.price,p.product_weight,p.price_after_tax FROM carts c JOIN products p ON p.id = c.product_id ${conditionSql}`,
     conditionValue,
   );
 };

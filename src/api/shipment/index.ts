@@ -11,6 +11,7 @@ const createShipment = async (requestPayload: ShipmentPayload) => {
 
 const updateShipment = async (requestPayload: { [key: string]: string }) => {
   const { id, ...rest } = requestPayload;
+  if (rest.recipient_phone_number) rest.recipient_phone_number = phoneNumberChecker(rest.recipient_phone_number);
   const keys = Object.keys(rest).map((item) => `${item} = ?`);
   const values = Object.values(rest);
   const dataPayload = {
@@ -27,9 +28,12 @@ const updateShipment = async (requestPayload: { [key: string]: string }) => {
 };
 
 const selectShipment = async (requestPayload: QueryShipment, methodQuery: string = 'and') => {
-  const { queryTemplate, queryValue } = queriesMaker(requestPayload, methodQuery);
+  const { filter, ...rest } = requestPayload;
+  const { queryTemplate, queryValue } = queriesMaker(rest, methodQuery);
   const [result] = await shipmentService.selectShipment(queryTemplate, queryValue);
-  return result;
+  if (Array.isArray(result)) {
+    return filter ? result.filter((obj1, i, arr) => arr.findIndex((obj2) => obj2.city === obj1.city) === i) : result;
+  }
 };
 
 export { createShipment, updateShipment, selectShipment };

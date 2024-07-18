@@ -13,14 +13,22 @@ import {
 import { signToken } from '../auth';
 import { ERROR_NAME } from '../../constants';
 import { createSession } from '../../services/sessions';
-import { networkOrderStat } from '../../services/networks';
+// import { networkOrderStat } from '../../services/networks';
 import { queriesMaker } from '../../utils';
+import { findNetworkByCode } from '../../services/networks';
 
 export const register = async (data: User) => {
   // check whether user exists through its phone number
-  const { queryTemplate, queryValue } = queriesMaker({ phone_number: data.phone_number });
+  const { queryTemplate, queryValue } = queriesMaker({ phone_number: data.phone_number, email: data.email }, 'or', 's');
   const [usersFound] = await findUserByValue(queryTemplate, queryValue);
   if (Array.isArray(usersFound) && usersFound.length < 1) {
+    if (data.referrer_code) {
+      const [referrerExist] = await findNetworkByCode(data.referrer_code);
+      if (Array.isArray(referrerExist)) {
+        if (referrerExist.length < 1)
+          throw { name: ERROR_NAME.NOT_FOUND, message: 'Could not find the referrer code on database.' };
+      } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Failed to check referrer code.' };
+    }
     const { password, ...rest } = data;
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -65,7 +73,7 @@ export const register = async (data: User) => {
 
 export const registerAdmin = async (data: UserAdmin) => {
   // check whether user exists
-  const { queryTemplate, queryValue } = queriesMaker({ email: data.email });
+  const { queryTemplate, queryValue } = queriesMaker({ email: data.email }, 'and', 's');
   const [usersFound] = await findUserByValue(queryTemplate, queryValue);
   if (Array.isArray(usersFound) && usersFound.length < 1) {
     // hash password
@@ -125,8 +133,9 @@ export const findUser = async (data: { [key: string]: string }) => {
 export const findProfile = async (userId: string) => {
   const { queryTemplate, queryValue } = queriesMaker({ id: userId }, 'and', 's');
   const [resultUser] = await findUserByValue(queryTemplate, queryValue);
-  const [resultNetwork] = await networkOrderStat([userId]);
-  return { data: resultUser, network_reference: resultNetwork };
+  return {
+    data: resultUser,
+  };
 };
 
 export const update = async (data: { [key: string]: string }, id: string, headerToken?: string | string[]) => {
@@ -140,8 +149,10 @@ export const update = async (data: { [key: string]: string }, id: string, header
   const [usersFound] = await findUserWithPassword(queryTemplate, queryValue);
   if (Array.isArray(usersFound) && usersFound.length > 0) {
     const { reset_password_token, reset_password_expire, password: hashedPassword } = usersFound[0];
-    const matchedPassword = await bcrypt.compare(old_password, hashedPassword);
-    if (!matchedPassword) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Old pin does not match.' };
+    if (!headerToken && old_password) {
+      const matchedPassword = await bcrypt.compare(old_password, hashedPassword);
+      if (!matchedPassword) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Old pin does not match.' };
+    }
     reset_token = reset_password_token;
     reset_expiry = reset_password_expire;
   } else throw { name: ERROR_NAME.NOT_FOUND, message: 'Could not find the id.' };
@@ -163,8 +174,10 @@ export const update = async (data: { [key: string]: string }, id: string, header
     };
   const [result] = await updateUser(field, ['id'], [...values, String(id)]);
   if (result.affectedRows) {
+    Object.keys(rest).forEach((field) => field === 'password' && delete rest[field]);
     return {
       status: result.affectedRows,
+      updatedData: rest,
     };
   } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not update user.' };
 };

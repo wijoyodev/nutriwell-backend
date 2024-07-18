@@ -7,7 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon",
     "lint": "npx eslint .",
-    "format": "npx prettier --write src"
+    "format": "npx prettier --write src",
+    "build": "rimraf dist && tsc -p tsconfig.json",
+    "pm2": "NODE_ENV=production pm2 start dist/index.js --name nutriwell-backend"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +26,7 @@
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.9.3",
+    "node-cache": "^5.1.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "winston": "^3.13.0"

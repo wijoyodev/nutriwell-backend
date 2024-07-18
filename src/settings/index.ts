@@ -8,8 +8,9 @@ const XENDIT_URL = process.env.XENDIT_URL;
 const XENDIT_API_KEY = process.env.SECRET_XENDIT ?? '';
 const BITESHIP_API_KEY = process.env.SECRET_BITESHIP ?? '';
 const XENDIT_WEBHOOK_TOKEN = process.env.XENDIT_WEBHOOK_TOKEN;
-const PRIVATE_KEY = fs.readFileSync(path.join(__dirname.split('Documents')[0], '.ssh/rs256_nutriwell'), 'utf8');
-const PUBLIC_KEY = fs.readFileSync(path.join(__dirname.split('Documents')[0], '.ssh/rs256_nutriwell.pub'), 'utf8');
+const CONFIG_PATH = process.env.CONFIG_PATH ?? '/root';
+const PRIVATE_KEY = fs.readFileSync(path.join(CONFIG_PATH, '.ssh/rs256_nutriwell'), 'utf8');
+const PUBLIC_KEY = fs.readFileSync(path.join(CONFIG_PATH, '.ssh/rs256_nutriwell.pub'), 'utf8');
 const XENDIT_HEADER = { 'Content-Type': 'application/json', Authorization: `Basic ${btoa(XENDIT_API_KEY + ':')}` };
 const BITESHIP_HEADER = [
   ['Content-Type', 'application/json'],
@@ -25,10 +26,11 @@ const DB = {
   DB_DATABASE: process.env.DB_DATABASE,
 };
 const EMAIL_SERVICE = {
-  SERVICE_ID: 'service_tr7a0ze',
-  TEMPLATE_RESET_PASSWORD_ID: 'template_p6qt6gx',
-  TEMPLATE_VERIFICATION_ID: 'template_u1dvl5t',
-  USER_ID: 'ozxbQV2BQmrxvbrsG',
+  API_URL: 'https://api.emailjs.com/api/v1.0/email/send',
+  SERVICE_ID: process.env.ENVIRONMENT === 'dev' ? 'service_tr7a0ze' : 'service_0acl3dk',
+  TEMPLATE_RESET_PASSWORD_ID: process.env.ENVIRONMENT === 'dev' ? 'template_p6qt6gx' : 'template_nxmdcpt',
+  TEMPLATE_VERIFICATION_ID: process.env.ENVIRONMENT === 'dev' ? 'template_u1dvl5t' : 'template_0n5jywb',
+  USER_ID: process.env.ENVIRONMENT === 'dev' ? 'ozxbQV2BQmrxvbrsG' : 'grTOHs9KEIi9zkhYb',
   ACCESS_TOKEN: process.env.MAILJS_TOKEN,
 };
 
@@ -47,4 +49,5 @@ export {
   XENDIT_HEADER,
   XENDIT_WEBHOOK_TOKEN,
   EMAIL_SERVICE,
+  CONFIG_PATH,
 };

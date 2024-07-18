@@ -23,7 +23,6 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
       courier_rate,
       courier_type,
       courier_company,
-      total_purchase,
       shipment_duration_range,
     } = req.body;
     const createPayload = {
@@ -35,7 +34,6 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
       courier_rate,
       courier_type,
       courier_company,
-      total_purchase,
       shipment_duration_range,
     };
     const result = await orderApi.createOrder(createPayload);
@@ -126,8 +124,20 @@ const selectOrders = async (
 ) => {
   try {
     Logger.info(`Select orders -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
-    const { id, status, search, sort, offset } = req.query;
-    const result = await orderApi.selectOrders({ id, status, search, sort, offset }, 'and');
+    const { id, status, search, sort, start, end, offset, user_id } = req.query;
+    const queryPayload: QueryOrders = {
+      id,
+      status,
+      search,
+      sort,
+      offset,
+      user_id,
+    };
+    if (start && end) {
+      queryPayload.start = new Date(Number(start) * 1000).toLocaleString('sv-SE');
+      queryPayload.end = new Date(Number(end) * 1000).toLocaleString('sv-SE');
+    }
+    const result = await orderApi.selectOrders(queryPayload, 'and');
     Logger.info(`Select orders -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: finish`);
     res.status(200).json({ result });
   } catch (err) {

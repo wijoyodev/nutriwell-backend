@@ -1,14 +1,26 @@
 import { execute } from '.';
-import { ProductPayload } from '../types';
+import { ProductHistoryPayload, ProductPayload } from '../types';
 
 const createProduct = async (payload: ProductPayload) => {
-  const { product_name, description, product_weight, product_images, price } = payload;
+  const { product_name, description, product_weight, product_images, price, price_after_tax } = payload;
   return await execute(
     `
-        INSERT INTO products(product_name,description,product_weight,product_images,price)
-        VALUES(?,?,?,?,?)
+        INSERT INTO products(product_name,description,product_weight,product_images,price,price_after_tax)
+        VALUES(?,?,?,?,?,?)
     `,
-    [product_name, description, product_weight, product_images, price],
+    [product_name, description, product_weight, product_images, price, price_after_tax],
+  );
+};
+
+const createProductHistory = async (payload: ProductHistoryPayload) => {
+  const { product_name, cart_id, description, product_weight, product_images, price, price_after_tax, product_id } =
+    payload;
+  return await execute(
+    `
+        INSERT INTO product_histories(product_id,cart_id,product_name,description,product_weight,product_images,price,price_after_tax)
+        VALUES(?,?,?,?,?,?,?,?)
+    `,
+    [product_id, cart_id, product_name, description, product_weight, product_images, price, price_after_tax],
   );
 };
 
@@ -26,4 +38,4 @@ const updateProduct = async (payload: { [key: string]: (string | number)[] }, id
   );
 };
 
-export { createProduct, selectProduct, updateProduct };
+export { createProduct, createProductHistory, selectProduct, updateProduct };

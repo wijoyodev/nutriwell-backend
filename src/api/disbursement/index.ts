@@ -18,8 +18,9 @@ export const createDisbursement = async (requestPayload: {
     monthBefore,
     user_id,
   ]);
-  if (Array.isArray(totalResult)) {
-    const totalCashable = Number(totalResult[0].total_reward);
+  const [totalDisbursement] = await disbursementService.getTotalDisbursement(user_id);
+  if (Array.isArray(totalResult) && Array.isArray(totalDisbursement)) {
+    const totalCashable = Number(totalResult[0].total_reward) - Number(totalDisbursement[0].total_disbursement);
     if (totalCashable - Number(amount) < 0)
       throw { name: ERROR_NAME.BAD_REQUEST, message: 'The amount is exceeding the total cashable of user.' };
     else {
@@ -30,12 +31,13 @@ export const createDisbursement = async (requestPayload: {
         amount: amountToDisburse,
         bank_code: account_bank_code,
         account_holder_name: account_bank_name,
-        account_number: account_bank_number,
+        account_number: String(account_bank_number),
         description,
       };
       const disbursementResult = await apiCall<{
         status: string;
         id: string;
+        error_code?: string;
         errors?: { [key: string]: string }[];
         message?: string;
       }>(`${XENDIT_URL}/disbursements`, {
@@ -43,6 +45,8 @@ export const createDisbursement = async (requestPayload: {
         body: JSON.stringify(disbursementPayload),
         headers: new Headers(XENDIT_HEADER),
       });
+      if (disbursementResult.error_code)
+        throw { name: ERROR_NAME.BAD_REQUEST, message: disbursementResult.errors ?? disbursementResult.error_code };
       const dbDisbursement = {
         user_id,
         external_id: disbursementResult.id,
@@ -100,14 +104,24 @@ export const getDisbursementList = async (queriesPayload: {
   user_id?: string;
   id?: string;
   status?: string[];
+  search?: string;
   offset?: string;
+  end?: string;
+  start?: string;
 }) => {
-  const { status = ['COMPLETED', 'FAILED', 'PENDING'], user_id, id, offset = '0' } = queriesPayload;
-  const { queryTemplate, queryValue } = queriesMaker({ user_id, id }, 'and', 'd', [], {
-    key: 'd.status_disbursement',
-    value: status.map((item) => JSON.stringify(item)).join(','),
-  });
+  const { status = ['COMPLETED', 'FAILED', 'PENDING'], user_id, id, start, end, offset = '0' } = queriesPayload;
+  const { queryTemplate, queryValue } = queriesMaker(
+    { user_id, id, start, end },
+    'and',
+    'd',
+    ['code', 'status_disbursement'],
+    {
+      key: 'd.status_disbursement',
+      value: status.map((item) => JSON.stringify(item)).join(','),
+    },
+  );
   const [resultDisbursement] = await disbursementService.getDisbursement(queryTemplate, queryValue, offset);
+  const [totalDisbursementData] = await disbursementService.getDisbursementData(queryTemplate, queryValue);
   let resultStat: { total_value: number; status_disbursement: string }[] = [];
   let totalResult: { total_reward: number }[] = [];
   let totalRewards: { total_reward: number }[] = [];
@@ -126,7 +140,7 @@ export const getDisbursementList = async (queriesPayload: {
     }
   }
 
-  if (Array.isArray(resultDisbursement)) {
+  if (Array.isArray(resultDisbursement) && Array.isArray(totalDisbursementData)) {
     resultStat.map((item) => {
       item.total_value = Number(item.total_value);
       return item;
@@ -145,6 +159,7 @@ export const getDisbursementList = async (queriesPayload: {
         Number(totalResult[0]?.total_reward) -
         resultStat.filter((item) => item?.status_disbursement === 'COMPLETED')[0]?.total_value,
       total_rewards: Number(totalRewards[0]?.total_reward) ?? 0,
+      total_disbursement_data: Number(totalDisbursementData[0].total_data),
       offset: Number(offset) ?? 0,
       limit: 10,
     };

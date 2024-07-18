@@ -36,3 +36,11 @@ export const TAX_DISBURSEMENT = {
     min: 120000001,
   },
 };
+
+export const CACHE_KEY = {
+  rates: 'courierRates',
+  tracking: 'tracking',
+};
+
+export const PDD_NUMBER = 1.11;
+export const PPN_NUMBER = 0.11;

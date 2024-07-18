@@ -68,6 +68,12 @@ export type ProductPayload = {
   product_images: string;
   price: number;
   product_weight?: number;
+  price_after_tax?: number;
+};
+
+export type ProductHistoryPayload = ProductPayload & {
+  product_id: number;
+  cart_id: number;
 };
 
 export type ShipmentPayload = {
@@ -78,7 +84,6 @@ export type ShipmentPayload = {
   province: string;
   city: string;
   district: string;
-  subdistrict: string;
   address_detail: string;
   postal_code?: string;
 };
@@ -95,7 +100,8 @@ export type OrderPayload = {
   courier_type?: string;
   courier_service_name: string;
   courier_rate: number;
-  total_purchase: number;
+  total_purchase?: number;
+  total_purchase_after_tax?: number;
   external_id?: string;
   payment_date?: string;
   receive_date?: string;
@@ -116,6 +122,7 @@ export type CartPayload = {
   total_weight?: number;
   total_price?: number;
   status_cart?: number;
+  total_price_after_tax?: number;
 };
 
 export type QueryBase = {
@@ -123,9 +130,16 @@ export type QueryBase = {
   search?: string;
 };
 
-export type QueryShipment = QueryBase & { user_id?: string };
+export type QueryShipment = QueryBase & { user_id?: string; filter?: boolean };
 
-export type QueryOrders = QueryBase & { user_id?: string; status?: number; sort?: string; offset?: string };
+export type QueryOrders = QueryBase & {
+  user_id?: string;
+  status?: number;
+  start?: number | string;
+  end?: number | string;
+  sort?: string;
+  offset?: string;
+};
 
 export type QueryProduct = QueryBase;
 
@@ -145,6 +159,9 @@ export type QueryDisbursement = {
   user_id?: string;
   status?: string;
   offset?: string;
+  search?: string;
+  start?: string;
+  end?: string;
 };
 
 export type QueryRewards = {
@@ -156,6 +173,11 @@ export type QueryNetwork = { sort: string; offset: string; level?: string; uplin
 
 export type QueryBanner = QueryBase & {
   code?: string;
+};
+
+export type QueryAddress = {
+  province_id?: string;
+  city_id?: string;
 };
 
 export type RateResponse = {
