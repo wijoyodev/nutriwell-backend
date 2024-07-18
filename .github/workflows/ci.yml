@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - '*'
 
 jobs:
-  build:
+  CI:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,3 +20,6 @@ jobs:
         node-version-file: .nvmrc
     - run: npm i
     - run: npm run build
+    - name: Fail if build failed
+      if: ${{ failure() }}
+      run: exit 1
