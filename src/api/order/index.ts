@@ -157,14 +157,14 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
       // check whether order is not created yet in Biteship and create an order
       if (rest.status === 1) {
         const orderBiteshipPayload = {
-          shipper_contact_name: 'Nutriwell Admin',
-          shipper_contact_phone: '087877072828',
-          shipper_contact_email: 'garamgarena@nutriwell.co.id',
-          shipper_organization: 'Nutriwell Global Jaya',
-          origin_contact_name: 'Nutriwell Admin',
-          origin_contact_phone: '089638139125',
-          origin_address: 'Cemplang Baru A/3',
-          origin_postal_code: 16112,
+          shipper_contact_name: 'Sutarna Dinata',
+          shipper_contact_phone: '085215912828',
+          shipper_contact_email: 'nutriwell@nutriwell.co.id',
+          shipper_organization: 'PT. Nutriwel Global jaya',
+          origin_contact_name: 'Sutarna Dinata',
+          origin_contact_phone: '085215912828',
+          origin_address: 'Pergudangan sentra prima park, Jl. Palem Manis Raya blok. C11, RT.004/RW.003, Gandasari, Kec. Jatiuwung, Kota Tangerang, Banten',
+          origin_postal_code: 15137,
           destination_contact_name: user_detail.recipient_name,
           destination_contact_phone: user_detail.recipient_phone_number,
           destination_address: `${user_detail.address_detail}, ${user_detail.district}, ${user_detail.province}`,
