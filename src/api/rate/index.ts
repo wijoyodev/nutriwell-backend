@@ -15,7 +15,7 @@ const getRate = async (requestPayload: {
     const dataPayload = {
       destination_postal_code,
       origin_postal_code: 16112,
-      couriers: 'anteraja,jne,sicepat,tiki',
+      couriers: 'anteraja,jne,sicepat,tiki,jnt,idexpress',
       items,
     };
 

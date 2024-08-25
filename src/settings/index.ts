@@ -34,6 +34,11 @@ const EMAIL_SERVICE = {
   ACCESS_TOKEN: process.env.MAILJS_TOKEN,
 };
 
+const MAILJET_SERVICE = {
+  MJ_APIKEY_PUBLIC: process.env.MAILJET_API_KEY ?? '',
+  MJ_APIKEY_PRIVATE: process.env.MAILJET_SECRET_KEY ?? '',
+};
+
 export {
   COOKIE_SECRET,
   MORGAN_FORMAT,
@@ -50,4 +55,5 @@ export {
   XENDIT_WEBHOOK_TOKEN,
   EMAIL_SERVICE,
   CONFIG_PATH,
+  MAILJET_SERVICE,
 };
