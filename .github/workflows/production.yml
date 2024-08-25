@@ -39,8 +39,7 @@ jobs:
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           npm install pm2 -g
           cd ~/nutriwell-backend
-          git pull origin develop/improvement
-          git status
+          git pull origin main
           rm -rf node_modules
           nvm use
           npm install
