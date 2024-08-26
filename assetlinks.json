@@ -20,5 +20,16 @@
         "AC:2C:9B:F9:F6:8D:05:2C:E5:28:86:72:60:2D:4A:18:68:66:E7:02:92:4C:1F:D4:F7:46:2A:97:A6:CF:67:DA"
       ]
     }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.garenahealthy.mobile",
+      "sha256_cert_fingerprints": [
+        "FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C",
+        "86:30:33:7D:E9:71:26:54:2F:5E:E1:9F:73:8A:00:9B:ED:F7:46:21:C8:28:D8:AF:B0:7E:6E:E9:EA:61:A4:FB"
+      ]
+    }
   }
 ]
