@@ -14,7 +14,7 @@ const selectOrderById = async (conditionValue?: string[], keyId = 'id') => {
     `SELECT orders.*,
     JSON_OBJECT('code', users.code, 'full_name', users.full_name, 'email', users.email, 'phone_number', users.phone_number, 
     'address_detail', shipments.address_detail, 'account_bank', users.account_bank, 'account_bank_code', users.account_bank_code, 'account_bank_name', users.account_bank_name, 'account_bank_number', users.account_bank_number, 'recipient_name', shipments.recipient_name, 'recipient_phone_number', shipments.recipient_phone_number, 'province', shipments.province, 'postal_code', shipments.postal_code, 'city', shipments.city, 'district', shipments.district) AS user_detail,
-    JSON_OBJECT('product_name', product_histories.product_name, 'product_image', product_histories.product_images, 'price', product_histories.price, 'price_after_tax', product_histories.price_after_tax, 'quantity', carts.quantity, 'total_price_after_tax', carts.total_price_after_tax, 'total_price', carts.total_price, 'total_weight', carts.total_weight) AS product_detail
+    JSON_OBJECT('product_name', product_histories.product_name, 'product_weight', product_histories.product_weight, 'product_image', product_histories.product_images, 'price', product_histories.price, 'price_after_tax', product_histories.price_after_tax, 'quantity', carts.quantity, 'total_price_after_tax', carts.total_price_after_tax, 'total_price', carts.total_price, 'total_weight', carts.total_weight) AS product_detail
     FROM orders JOIN (users,carts,shipments,product_histories) ON (orders.user_id=users.id AND orders.cart_id=carts.id AND orders.address_shipment_id = shipments.id AND carts.id = product_histories.cart_id) WHERE orders.${keyId} = ?`,
     conditionValue,
   );

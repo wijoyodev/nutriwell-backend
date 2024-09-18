@@ -157,12 +157,12 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
       // check whether order is not created yet in Biteship and create an order
       if (rest.status === 1) {
         const orderBiteshipPayload = {
-          shipper_contact_name: 'Sutarna Dinata',
-          shipper_contact_phone: '085215912828',
-          shipper_contact_email: 'nutriwell@nutriwell.co.id',
+          shipper_contact_name: 'Nutriwel Global Jaya',
+          shipper_contact_phone: '082122683838',
+          shipper_contact_email: 'garamgarena@nutriwell.co.id',
           shipper_organization: 'PT. Nutriwel Global jaya',
-          origin_contact_name: 'Sutarna Dinata',
-          origin_contact_phone: '085215912828',
+          origin_contact_name: 'Nutriwel Global Jaya',
+          origin_contact_phone: '082122683838',
           origin_address:
             'Pergudangan sentra prima park, Jl. Palem Manis Raya blok. C11, RT.004/RW.003, Gandasari, Kec. Jatiuwung, Kota Tangerang, Banten',
           origin_postal_code: 15137,
@@ -176,9 +176,9 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
           items: [
             {
               name: product_detail.product_name,
-              value: product_detail.total_price,
+              value: product_detail.price,
               quantity: product_detail.quantity,
-              weight: product_detail.total_weight,
+              weight: product_detail.product_weight,
             },
           ],
           reference_id: order_number,

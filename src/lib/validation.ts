@@ -21,8 +21,8 @@ export const registerSchema = checkSchema({
     },
   },
   phone_number: {
-    isMobilePhone: {
-      options: ['any'],
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
     },
   },
   phone_number_country: {
