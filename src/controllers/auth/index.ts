@@ -112,6 +112,7 @@ const verificationEmail = async (req: Request, res: Response, next: NextFunction
   try {
     Logger.info(`Verification email for register -client ${JSON.stringify(req.client)}- ${req.body.email}: start`);
     if (!req.body.email) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Email must be filled.' };
+    if (!req.body.referrer_code) throw { name: ERROR_NAME.BAD_REQUEST, message: 'Referrer must be filled' };
     const payload = {
       email: req.body.email,
       referrer_code: req.body.referrer_code ?? null,
