@@ -161,11 +161,11 @@ export const queryUpdateTransactionStatus = () => {
       UPDATE networks 
       SET has_transaction = ?
       WHERE user_id = ?;
-    `
-}
+    `;
+};
 
 export const queryFindNetworkById = () => {
   return `
       SELECT * FROM networks WHERE user_id = ?
-    `
-}
+    `;
+};

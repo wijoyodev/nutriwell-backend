@@ -72,18 +72,17 @@ app.listen(PORT, () => {
 });
 
 cron.schedule('55 23 28-31 * *', async () => {
-  if(isLastDayOfMonth()) {
-    Logger.info(`Cron job at ${new Date().toISOString()} is starting.`)
+  if (isLastDayOfMonth()) {
+    Logger.info(`Cron job at ${new Date().toISOString()} is starting.`);
     try {
-      await setUserStatus()
-      Logger.info(`Cron job finished at ${new Date().toISOString()}.`)
-    }catch(err) {
-      Logger.info(`Cron job error at ${new Date().toISOString()}. Error: ${JSON.stringify(err)}`)
+      await setUserStatus();
+      Logger.info(`Cron job finished at ${new Date().toISOString()}.`);
+    } catch (err) {
+      Logger.info(`Cron job error at ${new Date().toISOString()}. Error: ${JSON.stringify(err)}`);
     }
   } else {
-    Logger.info(`Cron job skipped due not last day of month. Current Date: ${new Date().toISOString()}`)
+    Logger.info(`Cron job skipped due not last day of month. Current Date: ${new Date().toISOString()}`);
   }
-  
-})
+});
 
 export default app;

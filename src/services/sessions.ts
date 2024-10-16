@@ -36,4 +36,4 @@ export const findSession = async (access_token: string) => {
 export const queryCreateSession = () => `
     INSERT INTO sessions (access_token, refresh_token, user_id)
     VALUES(?,?,?);
-  `
+  `;

@@ -26,7 +26,7 @@ const createOrder = async (requestPayload: {
   shipment_duration_range: string;
 }) => {
   try {
-    return await transaction( async (conn: PoolConnection) => {
+    return await transaction(async (conn: PoolConnection) => {
       const {
         user_id,
         cart_id,
@@ -59,7 +59,10 @@ const createOrder = async (requestPayload: {
             ? Number(rangeDelivery[0])
             : 0;
       // get address detail and product detail
-      const [orderDetails] = await conn.execute<ResultSetHeader>(orderService.queryOrderDetails(), [dataPayload.cart_id, dataPayload.address_shipment_id]);
+      const [orderDetails] = await conn.execute<ResultSetHeader>(orderService.queryOrderDetails(), [
+        dataPayload.cart_id,
+        dataPayload.address_shipment_id,
+      ]);
       if (Array.isArray(orderDetails) && orderDetails.length > 0) {
         const { user_detail, product_detail, total_price_after_tax, total_price } = orderDetails[0];
         dataPayload.total_purchase = total_price + dataPayload.courier_rate;
@@ -109,18 +112,31 @@ const createOrder = async (requestPayload: {
         const arrPayload = Object.values(dataPayload);
         const updateKeys = Object.keys(dataPayload).join(',');
         // save order in DB
-        const [result] = await conn.execute<ResultSetHeader>(orderService.queryCreateOrder(updateKeys, arrPayload), arrPayload);
+        const [result] = await conn.execute<ResultSetHeader>(
+          orderService.queryCreateOrder(updateKeys, arrPayload),
+          arrPayload,
+        );
         // update certain cart to be non active in product page
-        await conn.execute(cartService.queryUpdateStatusCart(),[0, cart_id]);
-        const { product_name, description, product_weight, product_images, price, price_after_tax, product_id } = product_detail;
+        await conn.execute(cartService.queryUpdateStatusCart(), [0, cart_id]);
+        const { product_name, description, product_weight, product_images, price, price_after_tax, product_id } =
+          product_detail;
         // wait for product_histories data to be made
-        await conn.execute(productService.queryCreateProductHistory(),[product_id, cart_id, product_name, description, product_weight, product_images, price, price_after_tax]);
+        await conn.execute(productService.queryCreateProductHistory(), [
+          product_id,
+          cart_id,
+          product_name,
+          description,
+          product_weight,
+          product_images,
+          price,
+          price_after_tax,
+        ]);
         if (result.affectedRows === 0) Logger.error(`Order creation failed: No affected row when creating one.`);
-        await conn.execute(queryUpdateUserStatus([user_id]), [1])
+        await conn.execute(queryUpdateUserStatus([user_id]), [1]);
         return { affectedRows: result.affectedRows, invoice_url };
-      } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not obtain cart and addresss data. Mismatch ids.' };  
-    })
-  }catch(err) {
+      } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not obtain cart and addresss data. Mismatch ids.' };
+    });
+  } catch (err) {
     throw { name: ERROR_NAME.BAD_REQUEST, message: 'Order process cannot be done.' };
   }
 };
@@ -145,7 +161,9 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
       if (keys.length > 0) {
         const keyId = idToUpdate;
 
-        const [resultOrderDetail] = await conn.execute<ResultSetHeader>(orderService.querySelectOrderById(keyId), [String(id)]);
+        const [resultOrderDetail] = await conn.execute<ResultSetHeader>(orderService.querySelectOrderById(keyId), [
+          String(id),
+        ]);
         if (Array.isArray(resultOrderDetail)) {
           const {
             user_id,
@@ -212,45 +230,51 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
             } else Logger.error({ name: ERROR_NAME.BAD_REQUEST, message: orderSentResult.error });
           }
 
-          if(rest.status === 3) {
-             // insert rewards for upline when downline has finished order
-             await conn.execute(networkService.queryUpdateTransactionStatus(), ['1', user_id]);
-             const [resultNetwork] = await conn.execute<ResultSetHeader>(networkService.queryFindNetworkById(), [user_id]);
-             if (Array.isArray(resultNetwork) && resultNetwork.length > 0) {
-               await Promise.all(
-                 ['first', 'second', 'third', 'fourth', 'fifth'].map(
-                   (item, index) =>
-                     resultNetwork[0][`upline_${item}_id`] &&
-                     conn.execute(queryCreateReward(
-                       'user_id,reward_profit,description',
-                       [
-                         resultNetwork[0][`upline_${item}_id`],
-                         rewardComission(total_price, item),
-                         `Pembelian Produk dari ${full_name} (level ${index + 1})`,
-                       ],
-                       rewardComission(total_price, item)
-                     ),
-                       [
-                         resultNetwork[0][`upline_${item}_id`],
-                         rewardComission(total_price, item),
-                         `Pembelian Produk dari ${full_name} (level ${index + 1})`,
-                       ],
-                     ),
-                 ),
-               );
-             } else Logger.error({ name: ERROR_NAME.BAD_REQUEST, message: 'Could not upate reward after payment' });
+          if (rest.status === 3) {
+            // insert rewards for upline when downline has finished order
+            await conn.execute(networkService.queryUpdateTransactionStatus(), ['1', user_id]);
+            const [resultNetwork] = await conn.execute<ResultSetHeader>(networkService.queryFindNetworkById(), [
+              user_id,
+            ]);
+            if (Array.isArray(resultNetwork) && resultNetwork.length > 0) {
+              await Promise.all(
+                ['first', 'second', 'third', 'fourth', 'fifth'].map(
+                  (item, index) =>
+                    resultNetwork[0][`upline_${item}_id`] &&
+                    conn.execute(
+                      queryCreateReward(
+                        'user_id,reward_profit,description',
+                        [
+                          resultNetwork[0][`upline_${item}_id`],
+                          rewardComission(total_price, item),
+                          `Pembelian Produk dari ${full_name} (level ${index + 1})`,
+                        ],
+                        rewardComission(total_price, item),
+                      ),
+                      [
+                        resultNetwork[0][`upline_${item}_id`],
+                        rewardComission(total_price, item),
+                        `Pembelian Produk dari ${full_name} (level ${index + 1})`,
+                      ],
+                    ),
+                ),
+              );
+            } else Logger.error({ name: ERROR_NAME.BAD_REQUEST, message: 'Could not upate reward after payment' });
           }
           // update the payload from body and biteship response if any
-          const [result] = await conn.execute<ResultSetHeader>(orderService.queryUpdateOrder(dataPayload, keyId, id), dataPayload.values);
+          const [result] = await conn.execute<ResultSetHeader>(
+            orderService.queryUpdateOrder(dataPayload, keyId, id),
+            dataPayload.values,
+          );
           return result;
         }
       }
       return {
         affectedRows: 0,
       };
-    })
-  }catch(err) {
-    throw { name: ERROR_NAME.BAD_REQUEST, message: 'Order process cannot be updated.'}
+    });
+  } catch (err) {
+    throw { name: ERROR_NAME.BAD_REQUEST, message: 'Order process cannot be updated.' };
   }
 };
 
@@ -317,7 +341,7 @@ const selectOrderById = async (requestPayload: string) => {
 };
 
 const getTracking = async (requestPayload: string) => {
-  const cacheData = getCache(CACHE_KEY.tracking+requestPayload);
+  const cacheData = getCache(CACHE_KEY.tracking + requestPayload);
   if (!cacheData) {
     const orderSentResult = await apiCall<{
       success: boolean;
@@ -328,8 +352,8 @@ const getTracking = async (requestPayload: string) => {
       headers: new Headers(BITESHIP_HEADER),
     });
     if (orderSentResult.success) {
-      const saveCache = generateCache(CACHE_KEY.tracking+requestPayload, orderSentResult.courier);
-      if (!saveCache) Logger.error(`Cache: Set cache with key ${CACHE_KEY.tracking+requestPayload} failed`);
+      const saveCache = generateCache(CACHE_KEY.tracking + requestPayload, orderSentResult.courier);
+      if (!saveCache) Logger.error(`Cache: Set cache with key ${CACHE_KEY.tracking + requestPayload} failed`);
       return orderSentResult.courier;
     } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not obtain history of shipment' };
   } else {

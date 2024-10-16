@@ -28,9 +28,7 @@ const query = async (sql: string) => {
   return result;
 };
 
-const transaction = async <T>(
-  callback: (conn: PoolConnection) => Promise<T>
-): Promise<T> => {
+const transaction = async <T>(callback: (conn: PoolConnection) => Promise<T>): Promise<T> => {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();

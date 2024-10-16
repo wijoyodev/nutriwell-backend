@@ -44,7 +44,15 @@ const deleteCart = async (payload: string) => {
 const queryUpdateStatusCart = () => {
   return `
     UPDATE carts SET status_cart = ? WHERE id = ?
-  `
-}
+  `;
+};
 
-export { createCart, selectCart, deleteCart, updateQuantityCart, updateStatusCart, selectCartPrice, queryUpdateStatusCart };
+export {
+  createCart,
+  selectCart,
+  deleteCart,
+  updateQuantityCart,
+  updateStatusCart,
+  selectCartPrice,
+  queryUpdateStatusCart,
+};

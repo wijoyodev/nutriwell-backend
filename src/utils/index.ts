@@ -196,7 +196,6 @@ export const taxDeducter = (amount: number) => {
 export const setDeadlineDate = (dayOfDeadline: number) =>
   new Date(new Date().setDate(new Date().getDate() + dayOfDeadline)).toLocaleString('sv-SE');
 
-
 export const isLastDayOfMonth = () => {
   const today = new Date();
   const tomorrow = new Date(today);
