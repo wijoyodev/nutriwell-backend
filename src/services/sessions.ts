@@ -32,3 +32,8 @@ export const updateSession = async (access_token: string, refresh_token: string)
 export const findSession = async (access_token: string) => {
   return await execute(`SELECT * FROM sessions WHERE access_token = ?`, [access_token]);
 };
+
+export const queryCreateSession = () => `
+    INSERT INTO sessions (access_token, refresh_token, user_id)
+    VALUES(?,?,?);
+  `

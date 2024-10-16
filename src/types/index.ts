@@ -14,7 +14,7 @@ export interface User {
   avatar_url?: string;
   status?: number;
   role?: number;
-  referrer_code?: string;
+  referrer_code: string;
   referrer_id?: string;
 }
 

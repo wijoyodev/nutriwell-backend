@@ -38,4 +38,11 @@ const updateProduct = async (payload: { [key: string]: (string | number)[] }, id
   );
 };
 
-export { createProduct, createProductHistory, selectProduct, updateProduct };
+const queryCreateProductHistory = () => {
+  return  `
+    INSERT INTO product_histories(product_id,cart_id,product_name,description,product_weight,product_images,price,price_after_tax)
+    VALUES(?,?,?,?,?,?,?,?)
+  `
+}
+
+export { createProduct, createProductHistory, selectProduct, updateProduct, queryCreateProductHistory };

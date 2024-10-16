@@ -22,6 +22,17 @@ export const findNetworkByCode = async (code: string) => {
   );
 };
 
+export const findDownlineNetworks = async (user_id: string) => {
+  return await execute<{ id: number }>(
+    `
+      SELECT s.id as referrer_id, s.referral_code, n.* FROM users s JOIN networks n 
+      ON n.upline_first_id = s.id OR n.upline_second_id = s.id OR n.upline_third_id = s.id OR n.upline_fourth_id = s.id OR n.upline_fifth_id = s.id
+      WHERE s.id = '${user_id}'
+      ORDER BY n.created_at ASC;
+    `,
+  );
+};
+
 export const findNetworkDetail = async (value: string[] = []) => {
   return await execute(
     `SELECT n.level, s.created_at, n.user_id, n.upline_id, s.avatar_url, s.full_name FROM networks n 
@@ -144,3 +155,17 @@ export const listNetworks = async (queries: string, levelQueries: string, offset
       `,
   );
 };
+
+export const queryUpdateTransactionStatus = () => {
+  return `
+      UPDATE networks 
+      SET has_transaction = ?
+      WHERE user_id = ?;
+    `
+}
+
+export const queryFindNetworkById = () => {
+  return `
+      SELECT * FROM networks WHERE user_id = ?
+    `
+}

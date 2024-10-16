@@ -43,4 +43,15 @@ const totalRewards = async (queries: string, values: string[]) => {
   );
 };
 
-export { createReward, getRewards, totalRewards, totalRewardThisMonth, countReward };
+const queryCreateReward = (payloadKey: string, payloadValue: (string | number)[], reward: number) => {
+  return  `INSERT INTO rewards(${payloadKey})
+  VALUES(${payloadValue.map(() => '?').join(',')})
+   ON DUPLICATE KEY UPDATE reward_profit = reward_profit + ${reward}
+  `
+}
+
+const queryDeleteRewardByIds = (userIds: string[]) => `DELETE FROM rewards
+WHERE created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND created_at < DATE_ADD(DATE_FORMAT(CURDATE(), '%Y-%m-01'), INTERVAL 1 MONTH) 
+AND user_id IN (${userIds.join(",")});`
+
+export { createReward, getRewards, totalRewards, totalRewardThisMonth, countReward, queryCreateReward, queryDeleteRewardByIds };
