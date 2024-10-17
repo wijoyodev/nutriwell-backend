@@ -11,6 +11,9 @@ import openApiSpecification from './lib/documentation';
 import router from './routes';
 import * as settings from './settings';
 import { clientInfo, errorMiddleware } from './middlewares';
+import * as cron from 'node-cron';
+import { setUserStatus } from './api/user';
+import { isLastDayOfMonth } from './utils';
 
 const PORT = 3002;
 const app = express();
@@ -66,6 +69,20 @@ app.use(errorMiddleware);
 
 app.listen(PORT, () => {
   console.log(`Server is on port ${PORT}`);
+});
+
+cron.schedule('55 23 28-31 * *', async () => {
+  if (isLastDayOfMonth()) {
+    Logger.info(`Cron job at ${new Date().toISOString()} is starting.`);
+    try {
+      await setUserStatus();
+      Logger.info(`Cron job finished at ${new Date().toISOString()}.`);
+    } catch (err) {
+      Logger.info(`Cron job error at ${new Date().toISOString()}. Error: ${JSON.stringify(err)}`);
+    }
+  } else {
+    Logger.info(`Cron job skipped due not last day of month. Current Date: ${new Date().toISOString()}`);
+  }
 });
 
 export default app;

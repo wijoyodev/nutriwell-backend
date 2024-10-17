@@ -1,4 +1,4 @@
-import mysql, { PoolOptions, ResultSetHeader } from 'mysql2/promise';
+import mysql, { PoolOptions, ResultSetHeader, PoolConnection } from 'mysql2/promise';
 import { DB } from '../settings';
 
 const access: PoolOptions = {
@@ -28,4 +28,19 @@ const query = async (sql: string) => {
   return result;
 };
 
-export { query, execute };
+const transaction = async <T>(callback: (conn: PoolConnection) => Promise<T>): Promise<T> => {
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const result = await callback(connection);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+export { query, execute, transaction };

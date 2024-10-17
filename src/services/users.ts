@@ -1,4 +1,5 @@
 import { execute, query } from '.';
+import { LEVEL_NAME } from '../constants';
 import { UserAdmin } from '../types';
 
 export const createUser = async (keyToAdd: string[], valueToAdd: (string | number)[], referrerExists = true) => {
@@ -117,3 +118,40 @@ export const updateUser = async (key: string[], condition: string[], value: stri
   const whereQueries = condition.map((item) => `${item} = ?`);
   return await execute(`UPDATE users SET ${updateQueries.join(', ')} WHERE ${whereQueries.join(' AND ')}`, value);
 };
+
+export const queryFindUser = (conditionSql: string) => {
+  return `SELECT s.id FROM users s ${conditionSql}`;
+};
+
+export const queryFindUserByReferral = () => {
+  return `SELECT s.id FROM users s WHERE referral_code = ?;`;
+};
+
+export const queryCountDownlines = (currentLevel: number) =>
+  `SELECT COUNT(n.id) as count FROM networks n WHERE n.upline_${LEVEL_NAME[currentLevel]}_id = ?;`;
+
+export const queryListDownlines = (currentLevel: number) =>
+  `SELECT n.user_id, s.referral_code FROM networks n JOIN users s ON s.id=n.user_id WHERE n.upline_${LEVEL_NAME[currentLevel]}_id = ? ORDER BY n.created_at ASC;`;
+
+export const queryTriggerNewDownline = () => `CREATE TRIGGER IF NOT EXISTS add_network AFTER INSERT on users
+    FOR EACH ROW
+    BEGIN
+      INSERT INTO networks (user_id, upline_first_id, upline_second_id, upline_third_id, upline_fourth_id, upline_fifth_id)
+      VALUES(
+        NEW.id,
+        (SELECT id FROM users WHERE referral_code = NEW.referrer_code),
+        (SELECT n.upline_first_id FROM networks n JOIN users u ON n.user_id = u.id WHERE u.referral_code = NEW.referrer_code),
+        (SELECT n.upline_second_id FROM networks n JOIN users u ON n.user_id = u.id WHERE u.referral_code = NEW.referrer_code),
+        (SELECT n.upline_third_id FROM networks n JOIN users u ON n.user_id = u.id WHERE u.referral_code = NEW.referrer_code),
+        (SELECT n.upline_fourth_id FROM networks n JOIN users u ON n.user_id = u.id WHERE u.referral_code = NEW.referrer_code)
+      );
+    END;`;
+
+export const queryCreateUser = (keyToAdd: string[]) => `INSERT INTO users(${keyToAdd.join(',')})
+  VALUES(${keyToAdd.map(() => '?').join(',')});
+  `;
+
+export const queryUpdateUserStatus = (userMap: string[]) =>
+  `UPDATE users SET status = ? WHERE id IN (${userMap.join(',')})`;
+
+export const queryGetUserStatus = () => `SELECT s.id, s.status FROM users s LIMIT ? OFFSET ?;`;

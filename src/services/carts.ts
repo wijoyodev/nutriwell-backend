@@ -41,4 +41,18 @@ const deleteCart = async (payload: string) => {
   return await query(`DELETE FROM carts WHERE id = ${payload}`);
 };
 
-export { createCart, selectCart, deleteCart, updateQuantityCart, updateStatusCart, selectCartPrice };
+const queryUpdateStatusCart = () => {
+  return `
+    UPDATE carts SET status_cart = ? WHERE id = ?
+  `;
+};
+
+export {
+  createCart,
+  selectCart,
+  deleteCart,
+  updateQuantityCart,
+  updateStatusCart,
+  selectCartPrice,
+  queryUpdateStatusCart,
+};

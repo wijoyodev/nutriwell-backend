@@ -44,3 +44,14 @@ export const CACHE_KEY = {
 
 export const PDD_NUMBER = 1.11;
 export const PPN_NUMBER = 0.11;
+
+export const LEVEL_NAME: { [key: string]: string } = {
+  '1': 'first',
+  '2': 'second',
+  '3': 'third',
+  '4': 'fourth',
+  '5': 'fifth',
+};
+
+export const FETCH_BATCH_SIZE = 100;
+export const UPDATE_BATCH_SIZE = 100;

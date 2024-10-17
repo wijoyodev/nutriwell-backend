@@ -9,7 +9,9 @@ const getRate = async (requestPayload: {
   destination_postal_code: number;
   items: { name: string; weight: number; price: number; quantity: number }[];
 }) => {
-  const cacheData = getCache(CACHE_KEY.rates);
+  const cacheData = getCache(
+    CACHE_KEY.rates + String(requestPayload.destination_postal_code) + String(requestPayload.items[0].quantity),
+  );
   if (!cacheData) {
     const { destination_postal_code, items } = requestPayload;
     const dataPayload = {
@@ -35,8 +37,15 @@ const getRate = async (requestPayload: {
         Logger.error(`Biteship Rate API: ${JSON.stringify(getResponse.error)}`);
         return [];
       } else {
-        const saveCache = generateCache(CACHE_KEY.rates, getResponse.pricing, 1200);
-        if (!saveCache) Logger.error(`Cache: Set cache with key ${CACHE_KEY.rates} failed`);
+        const saveCache = generateCache(
+          CACHE_KEY.rates + String(destination_postal_code + String(items[0].quantity)),
+          getResponse.pricing,
+          1200,
+        );
+        if (!saveCache)
+          Logger.error(
+            `Cache: Set cache with key ${CACHE_KEY.rates + String(destination_postal_code) + String(items[0].quantity)} failed`,
+          );
         return getResponse.pricing;
       }
     } else {

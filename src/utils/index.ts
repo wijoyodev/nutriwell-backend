@@ -174,10 +174,6 @@ export const rewardComission = (total_price: number, level: string) => {
 
 export const monthBeforeGenerator = () => {
   const d = new Date();
-  // const month = d.getMonth();
-  // const year = d.getFullYear();
-  // const date = new Date(year, month, 0).toLocaleString('sv-SE');
-  // return date;
   d.setMinutes(d.getMinutes() - 1);
   return d.toLocaleString('sv-SE');
 };
@@ -199,3 +195,10 @@ export const taxDeducter = (amount: number) => {
 
 export const setDeadlineDate = (dayOfDeadline: number) =>
   new Date(new Date().setDate(new Date().getDate() + dayOfDeadline)).toLocaleString('sv-SE');
+
+export const isLastDayOfMonth = () => {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1); // Check the next day
+  return tomorrow.getDate() === 1; // If tomorrow is the 1st, today is the last day
+};
