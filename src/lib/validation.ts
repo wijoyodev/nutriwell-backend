@@ -45,6 +45,11 @@ export const registerSchema = checkSchema({
       errorMessage: FIELD_EMPTY,
     },
   },
+  referrer_code: {
+    notEmpty: {
+      errorMessage: FIELD_EMPTY,
+    }
+  }
 });
 
 export const registerAdminSchema = checkSchema({
