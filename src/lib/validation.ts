@@ -48,8 +48,8 @@ export const registerSchema = checkSchema({
   referrer_code: {
     notEmpty: {
       errorMessage: FIELD_EMPTY,
-    }
-  }
+    },
+  },
 });
 
 export const registerAdminSchema = checkSchema({
