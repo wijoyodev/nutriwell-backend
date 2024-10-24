@@ -10,7 +10,7 @@ import { emailPayloadGenerator, queriesMaker, setDeadlineDate } from '../../util
 import { API_URL, CONFIG_PATH, EMAIL_SERVICE } from '../../settings';
 import { findNetworkByCode } from '../../services/networks';
 import * as verificationService from '../../services/verifications';
-import { sendVerificationEmail } from '../../lib/email';
+// import { sendVerificationEmail } from '../../lib/email';
 
 export const signToken = (payload: tokenPayload, user = '', newRefreshToken = true) => {
   const privateKey = fs.readFileSync(path.join(CONFIG_PATH, '.ssh/rs256_nutriwell'), 'utf8');
@@ -195,7 +195,7 @@ export const resetPassword = async (email: string) => {
         reset_link: `${API_URL}/${btoa(resetToken)}`,
         email_recipient: email,
       };
-      await sendVerificationEmail(emailBody.to_name, emailBody.reset_link, 6232376);
+      // await sendVerificationEmail(emailBody.to_name, emailBody.reset_link, 6232376);
       const emailTemplate = emailPayloadGenerator(EMAIL_SERVICE.TEMPLATE_RESET_PASSWORD_ID, emailBody);
       const result = await fetch(EMAIL_SERVICE.API_URL, {
         method: 'POST',
@@ -264,7 +264,7 @@ export const verificationEmail = async (payload: { email: string; referrer_code?
         register_url: `${API_URL}/verification-email/${verificationToken}`,
         email_recipient: email,
       };
-      await sendVerificationEmail(emailBody.to_name, emailBody.register_url, 6202808);
+      // await sendVerificationEmail(emailBody.to_name, emailBody.register_url, 6202808);
       const emailCreds = emailPayloadGenerator(EMAIL_SERVICE.TEMPLATE_VERIFICATION_ID, emailBody);
       const result = await fetch(EMAIL_SERVICE.API_URL, {
         method: 'POST',
