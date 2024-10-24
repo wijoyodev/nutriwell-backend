@@ -51,7 +51,7 @@ export const createDisbursement = async (requestPayload: {
         user_id,
         external_id: disbursementResult.id,
         description,
-        disbursement_value: amountToDisburse,
+        disbursement_value: amount,
         total_tax: taxToDeduct,
         status_disbursement: disbursementResult.status,
       };

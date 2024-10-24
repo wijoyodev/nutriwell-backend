@@ -43,46 +43,46 @@ export const register = async (data: User) => {
       const [usersFound] = await conn.execute(queryFindUser(queryTemplate), queryValue);
       if (Array.isArray(usersFound) && usersFound.length < 1) {
         // check user based on referrer code
-        const [referrerFound] = await conn.execute<ResultSetHeader>(queryFindUserByReferral(), [data.referrer_code]);
-        if (Array.isArray(referrerFound)) {
-          const queue: QueueNode[] = [];
-          const { id } = referrerFound[0];
-          queue.push({ userId: id, currentLevel: 1 });
-          let foundUser: number | null = null;
+        // const [referrerFound] = await conn.execute<ResultSetHeader>(queryFindUserByReferral(), [data.referrer_code]);
+        // if (Array.isArray(referrerFound)) {
+        //   const queue: QueueNode[] = [];
+        //   const { id } = referrerFound[0];
+        //   queue.push({ userId: id, currentLevel: 1 });
+        //   let foundUser: number | null = null;
 
-          while (queue.length > 0) {
-            const { userId, currentLevel, referral_code } = queue.shift()!;
-            if (currentLevel > 5) {
-              continue; // Exceeds maximum levels
-            }
-            // Count the number of direct downlines
-            const [countRows] = await conn.execute(queryCountDownlines(currentLevel), [userId]);
-            const count = (countRows as { count: number }[])[0].count;
-            if (count < 3) {
-              // Found a user with available downline slot
-              foundUser = userId;
-              data.referrer_code = referral_code ?? data.referrer_code;
-              break;
-            } else {
-              // Fetch downlines ordered by created_at ASC (oldest first)
-              const [downlinesRows] = await conn.execute(queryListDownlines(currentLevel), [userId]);
+        //   while (queue.length > 0) {
+        //     const { userId, currentLevel, referral_code } = queue.shift()!;
+        //     if (currentLevel > 5) {
+        //       continue; // Exceeds maximum levels
+        //     }
+        //     // Count the number of direct downlines
+        //     const [countRows] = await conn.execute(queryCountDownlines(currentLevel), [userId]);
+        //     const count = (countRows as { count: number }[])[0].count;
+        //     if (count < 3) {
+        //       // Found a user with available downline slot
+        //       foundUser = userId;
+        //       data.referrer_code = referral_code ?? data.referrer_code;
+        //       break;
+        //     } else {
+        //       // Fetch downlines ordered by created_at ASC (oldest first)
+        //       const [downlinesRows] = await conn.execute(queryListDownlines(currentLevel), [userId]);
 
-              const downlines: { user_id: number; referral_code: string }[] = downlinesRows as {
-                user_id: number;
-                referral_code: string;
-              }[];
+        //       const downlines: { user_id: number; referral_code: string }[] = downlinesRows as {
+        //         user_id: number;
+        //         referral_code: string;
+        //       }[];
 
-              for (const downline of downlines) {
-                queue.push({
-                  userId: downline.user_id,
-                  currentLevel: currentLevel,
-                  referral_code: downline.referral_code,
-                });
-              }
-              queue.push({ userId: id, currentLevel: currentLevel + 1 });
-            }
-          }
-          if (foundUser) {
+        //       for (const downline of downlines) {
+        //         queue.push({
+        //           userId: downline.user_id,
+        //           currentLevel: currentLevel,
+        //           referral_code: downline.referral_code,
+        //         });
+        //       }
+        //       queue.push({ userId: id, currentLevel: currentLevel + 1 });
+        //     }
+        //   }
+        //   if (foundUser) {
             const { password, ...rest } = data;
             // hash password
             const hashedPassword = await bcrypt.hash(password, 10);
@@ -130,14 +130,12 @@ export const register = async (data: User) => {
                 };
               } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not create session for the user in DB' };
             } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Could not create user.' };
-          } else
-            throw {
-              name: ERROR_NAME.NOT_FOUND,
-              message: 'Could not find available place for new user in any downlines.',
-            };
-        } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Failed to check referrer code.' };
-
-        return {};
+        //   } else
+        //     throw {
+        //       name: ERROR_NAME.NOT_FOUND,
+        //       message: 'Could not find available place for new user in any downlines.',
+        //     };
+        // } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'Failed to check referrer code.' };
       } else throw { name: ERROR_NAME.BAD_REQUEST, message: 'already a registered user.' };
     });
   } catch (err) {
