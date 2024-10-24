@@ -45,7 +45,7 @@ const getDisbursementStat = async (queries: string, values: string[]) => {
 
 const getTotalDisbursement = async (user_id: string) => {
   return await query(
-    `SELECT SUM(disbursement_value) as total_disbursement FROM disbursements WHERE user_id=${user_id} AND status_disbursement IN ('PENDING','SUCCESS');`,
+    `SELECT SUM(disbursement_value) as total_disbursement FROM disbursements WHERE user_id=${user_id} AND status_disbursement IN ('PENDING','COMPLETED');`,
   );
 };
 
