@@ -227,39 +227,36 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
             if (orderSentResult.success) {
               dataPayload.keys.push('external_id = ?');
               dataPayload.values.push(orderSentResult.id);
-            } else Logger.error({ name: ERROR_NAME.BAD_REQUEST, message: orderSentResult.error });
-          }
-
-          if (rest.status === 3) {
-            // insert rewards for upline when downline has finished order
-            await conn.execute(networkService.queryUpdateTransactionStatus(), ['1', user_id]);
-            const [resultNetwork] = await conn.execute<ResultSetHeader>(networkService.queryFindNetworkById(), [
-              user_id,
-            ]);
-            if (Array.isArray(resultNetwork) && resultNetwork.length > 0) {
-              await Promise.all(
-                ['first', 'second', 'third', 'fourth', 'fifth'].map(
-                  (item, index) =>
-                    resultNetwork[0][`upline_${item}_id`] &&
-                    conn.execute(
-                      queryCreateReward(
-                        'user_id,reward_profit,description',
+              // insert rewards for upline when downline has paid order
+              await conn.execute(networkService.queryUpdateTransactionStatus(), ['1', user_id]);
+              const [resultNetwork] = await conn.execute<ResultSetHeader>(networkService.queryFindNetworkById(), [
+                user_id,
+              ]);
+              if (Array.isArray(resultNetwork) && resultNetwork.length > 0) {
+                await Promise.all(
+                  ['first', 'second', 'third', 'fourth', 'fifth'].map(
+                    (item, index) =>
+                      resultNetwork[0][`upline_${item}_id`] &&
+                      conn.execute(
+                        queryCreateReward(
+                          'user_id,reward_profit,description',
+                          [
+                            resultNetwork[0][`upline_${item}_id`],
+                            rewardComission(total_price, item),
+                            `Pembelian Produk dari ${full_name} (level ${index + 1})`,
+                          ],
+                          rewardComission(total_price, item),
+                        ),
                         [
                           resultNetwork[0][`upline_${item}_id`],
                           rewardComission(total_price, item),
                           `Pembelian Produk dari ${full_name} (level ${index + 1})`,
                         ],
-                        rewardComission(total_price, item),
                       ),
-                      [
-                        resultNetwork[0][`upline_${item}_id`],
-                        rewardComission(total_price, item),
-                        `Pembelian Produk dari ${full_name} (level ${index + 1})`,
-                      ],
-                    ),
-                ),
-              );
-            } else Logger.error({ name: ERROR_NAME.BAD_REQUEST, message: 'Could not upate reward after payment' });
+                  ),
+                );
+              } else Logger.error({ name: ERROR_NAME.BAD_REQUEST, message: 'Could not upate reward after payment' });
+            } else Logger.error({ name: ERROR_NAME.BAD_REQUEST, message: orderSentResult.error });
           }
           // update the payload from body and biteship response if any
           const [result] = await conn.execute<ResultSetHeader>(
