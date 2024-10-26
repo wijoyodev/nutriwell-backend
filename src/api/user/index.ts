@@ -24,6 +24,7 @@ import { queriesMaker } from '../../utils';
 import { transaction } from '../../services';
 import { PoolConnection, ResultSetHeader } from 'mysql2/promise';
 import { queryDeleteRewardByIds } from '../../services/rewards';
+import { MAX_DOWNLINE_SIZE } from '../../settings';
 
 interface QueueNode {
   userId: number;
@@ -58,7 +59,7 @@ export const register = async (data: User) => {
             // Count the number of direct downlines
             const [countRows] = await conn.execute(queryCountDownlines(currentLevel), [userId]);
             const count = (countRows as { count: number }[])[0].count;
-            if (count < 3) {
+            if (count < MAX_DOWNLINE_SIZE) {
               // Found a user with available downline slot
               foundUser = userId;
               data.referrer_code = referral_code ?? data.referrer_code;

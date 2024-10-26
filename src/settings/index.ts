@@ -39,6 +39,8 @@ const MAILJET_SERVICE = {
   MJ_APIKEY_PRIVATE: process.env.MAILJET_SECRET_KEY ?? '',
 };
 
+const MAX_DOWNLINE_SIZE = Number(process.env.MAX_DOWNLINE_SIZE) ?? 10;
+
 export {
   COOKIE_SECRET,
   MORGAN_FORMAT,
@@ -56,4 +58,5 @@ export {
   EMAIL_SERVICE,
   CONFIG_PATH,
   MAILJET_SERVICE,
+  MAX_DOWNLINE_SIZE
 };
