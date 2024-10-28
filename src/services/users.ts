@@ -96,7 +96,7 @@ export const findUserNetworkList = async (
     `
     SELECT s.id, s.full_name, s.code, s.status, s.email, s.referral_code, s.phone_number, s.gender, s.date_of_birth, s.account_bank, s.account_bank_code, s.account_bank_name, s.account_bank_number, s.avatar_url,
     (SELECT COUNT(nd.id) as total_network FROM networks nd WHERE nd.upline_first_id = s.id OR nd.upline_second_id = s.id OR nd.upline_third_id = s.id OR nd.upline_fourth_id = s.id OR nd.upline_fifth_id = s.id) as total_downlines,
-    (SELECT FORMAT(SUM(reward_profit),0) as total_reward FROM rewards WHERE rewards.user_id=s.id) as total_profit,
+    (SELECT SUM(reward_profit) as total_reward FROM rewards WHERE rewards.user_id=s.id) as total_profit,
     JSON_OBJECT('full_name', se.full_name, 'code', se.code, 'join_date', se.created_at, 'phone_number', se.phone_number) AS upline, 
     JSON_OBJECT('address_detail', sh.address_detail, 'recipient_name', sh.recipient_name, 'recipient_phone_number', sh.recipient_phone_number, 
     'province', sh.province, 'postal_code', sh.postal_code, 'city', sh.city, 'district', sh.district) AS address_detail
