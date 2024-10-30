@@ -276,13 +276,15 @@ const updateOrder = async (requestPayload: { [key: string]: string | number }, i
 };
 
 const selectOrders = async (requestPayload: QueryOrders, methodQuery: string = 'and') => {
-  const { sort, offset, ...rest } = requestPayload;
-  const { queryTemplate, queryValue } = queriesMaker(rest, methodQuery, 'orders', [
-    'shipment_number',
-    'external_id',
-    'code',
-    'order_number',
-  ]);
+  const { sort, offset, status, date_type, ...rest } = requestPayload;
+  const { queryTemplate, queryValue } = queriesMaker(
+    rest,
+    methodQuery,
+    'orders',
+    ['shipment_number', 'external_id', 'code', 'order_number'],
+    { key: 'orders.status', value: status ?? '0,1,2,3,4' },
+    date_type,
+  );
   const [result] = await orderService.selectOrders(queryTemplate, queryValue, sort, offset);
   let totalOrders = 0;
   let totalNetIncome = 0;
@@ -294,9 +296,13 @@ const selectOrders = async (requestPayload: QueryOrders, methodQuery: string = '
       item.total_purchase = parseFloat(item.total_purchase);
       item.net_income = parseFloat(item.net_income);
     });
-    const [resultTotalOrders] = await orderService.findTotalOrders(queryTemplate, queryValue);
-    if (Array.isArray(resultTotalOrders) && resultTotalOrders.length > 0) {
-      const { total_orders, total_net_income, total_net_income_after_tax } = resultTotalOrders[0];
+    const [[resultTotalOrders], [totalIncome]] = await Promise.all([
+      orderService.findTotalOrders(queryTemplate, queryValue),
+      orderService.findTotalIncome(queryTemplate, queryValue),
+    ]);
+    if (Array.isArray(resultTotalOrders) && Array.isArray(totalIncome)) {
+      const { total_orders } = resultTotalOrders[0];
+      const { total_net_income, total_net_income_after_tax } = totalIncome[0];
       totalOrders = total_orders;
       totalNetIncome = parseFloat(total_net_income);
       totalNetIncomeAfterTax = parseFloat(total_net_income_after_tax);

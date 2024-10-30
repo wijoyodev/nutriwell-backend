@@ -58,6 +58,7 @@ export const queriesMaker = (
   alias?: string,
   matchKey?: string[],
   rangePayload?: { [key: string]: string | number },
+  dateType = 'created_at',
 ) => {
   const andObject = {};
   const matchObject = {};
@@ -84,8 +85,9 @@ export const queriesMaker = (
         condition: Object.keys(queries[key])
           .filter((item) => item)
           .map((item) => {
-            if (item === 'start' && Object.values(queries[key])) return `${alias ? alias + '.' : ''}created_at >= ?`;
-            else if (item === 'end' && Object.values(queries[key])) return `${alias ? alias + '.' : ''}created_at <= ?`;
+            if (item === 'start' && Object.values(queries[key])) return `${alias ? alias + '.' : ''}${dateType} >= ?`;
+            else if (item === 'end' && Object.values(queries[key]))
+              return `${alias ? alias + '.' : ''}${dateType} <= ?`;
             else return `${alias ? alias + '.' : ''}${item} = ?`;
           }),
         value: Object.values(queries[key]).filter((item) => item),

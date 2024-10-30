@@ -124,7 +124,7 @@ const selectOrders = async (
 ) => {
   try {
     Logger.info(`Select orders -client ${JSON.stringify(req.client)}- ${JSON.stringify(req.user)}: start`);
-    const { id, status, search, sort, start, end, offset, user_id } = req.query;
+    const { id, status, search, sort, start, end, offset, user_id, date_type } = req.query;
     const queryPayload: QueryOrders = {
       id,
       status,
@@ -132,6 +132,7 @@ const selectOrders = async (
       sort,
       offset,
       user_id,
+      date_type,
     };
     if (start && end) {
       queryPayload.start = new Date(Number(start) * 1000).toLocaleString('sv-SE');

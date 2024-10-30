@@ -139,6 +139,7 @@ export type QueryOrders = QueryBase & {
   end?: number | string;
   sort?: string;
   offset?: string;
+  date_type?: string;
 };
 
 export type QueryProduct = QueryBase;
