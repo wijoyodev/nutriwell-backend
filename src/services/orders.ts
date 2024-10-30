@@ -32,7 +32,14 @@ const selectOrders = async (queries: string, value: string[] | number[], sort = 
 
 const findTotalOrders = async (conditionSql: string, conditionValue?: string[]) => {
   return await execute(
-    `SELECT COUNT(orders.id) AS total_orders, SUM(carts.total_price) as total_net_income, SUM(carts.total_price_after_tax) as total_net_income_after_tax FROM orders JOIN (carts, product_histories, users) ON (carts.id=product_histories.cart_id AND orders.cart_id=carts.id AND orders.user_id=users.id) ${conditionSql}`,
+    `SELECT COUNT(orders.id) AS total_orders FROM orders JOIN (carts, product_histories, users) ON (carts.id=product_histories.cart_id AND orders.cart_id=carts.id AND orders.user_id=users.id) ${conditionSql}`,
+    conditionValue,
+  );
+};
+
+const findTotalIncome = async (conditionSql: string, conditionValue?: string[]) => {
+  return await execute(
+    `SELECT SUM(carts.total_price) as total_net_income, SUM(carts.total_price_after_tax) as total_net_income_after_tax FROM orders JOIN (carts, product_histories, users) ON (carts.id=product_histories.cart_id AND orders.cart_id=carts.id AND orders.user_id=users.id) ${conditionSql} AND orders.payment_date IS NOT NULL`,
     conditionValue,
   );
 };
@@ -115,4 +122,5 @@ export {
   queryCreateOrder,
   querySelectOrderById,
   queryUpdateOrder,
+  findTotalIncome,
 };
