@@ -83,6 +83,8 @@ cron.schedule('55 23 28-31 * *', async () => {
   } else {
     Logger.info(`Cron job skipped due not last day of month. Current Date: ${new Date().toISOString()}`);
   }
+}, {
+  timezone: "Asia/Jakarta"
 });
 
 export default app;
