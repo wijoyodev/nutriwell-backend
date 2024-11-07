@@ -155,3 +155,7 @@ export const queryUpdateUserStatus = (userMap: string[]) =>
   `UPDATE users SET status = ? WHERE id IN (${userMap.join(',')})`;
 
 export const queryGetUserStatus = () => `SELECT s.id, s.status FROM users s LIMIT ? OFFSET ?;`;
+
+export const findUserStatus = async (user_id: string) => {
+  return await execute(`SELECT users.status FROM users WHERE id = ?`, [user_id]);
+};
